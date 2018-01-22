@@ -30,7 +30,7 @@ class TreeBuilder {
                 Object value = entry.getValue();
                 TreeItem<String> leaf = new TreePair(key, value).getItem();
                 root.getChildren().add(leaf);
-
+                
                 if (config.toConfig().getValue(key).valueType().name().equals("OBJECT")){
                     build(config.toConfig().getObject(key), leaf);
                 }
