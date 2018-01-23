@@ -11,7 +11,7 @@ public class Selector {
 
     private Button button = new Button();
 
-    private TextField field = new TextField("C:\\Users\\Growthteam\\Documents\\IdeaProjects\\hocontool\\src\\main\\resources");
+    private TextField field = new TextField("C:\\Users\\Growthteam\\Desktop\\test-data\\resources");
 
     Selector(final Stage stage){
         field.setPrefWidth(800);

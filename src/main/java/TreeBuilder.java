@@ -3,47 +3,46 @@ import com.typesafe.config.ConfigValue;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 
-import java.util.Iterator;
 import java.util.Map;
 
 class TreeBuilder {
 
-    private TreeView<String> finalTree;
+    private TreeView<String> tree;
 
-    TreeBuilder(final ConfigObject config, final MainUI UI){
+    TreeBuilder(final ConfigObject config, final MainUI UI, Loader loader){
 
         TreeItem<String> root = new TreeItem<> ("Configuration");
 
-        finalTree = new TreeView<>(root);
-        finalTree.getSelectionModel().selectedItemProperty().addListener((observable, oldVal, newVal) ->
-                UI.changeEditingEntry(newVal, config)
+        tree = new TreeView<>(root);
+        tree.setMaxWidth(350);
+        tree.setShowRoot(false);
+        tree.getSelectionModel().selectedItemProperty().addListener((observable, oldVal, newVal) ->
+                UI.changeEditingEntry(newVal, loader.getFullConfig())
         );
 
         build(config, root);
-
     }
 
     private void build(ConfigObject config, TreeItem<String> root){
-        Iterator<Map.Entry<String, ConfigValue>> keys = config.entrySet().iterator();
 
-        while(keys.hasNext()){
-            try{
-                Map.Entry entry = keys.next();
-                String key = (String) entry.getKey();
+        for (Map.Entry<String, ConfigValue> stringConfigValueEntry : config.entrySet()) {
+            try {
+                String key = (String) ((Map.Entry) stringConfigValueEntry).getKey();
                 TreeItem<String> leaf = new TreeItem<>(key);
                 root.getChildren().add(leaf);
 
-                if (config.toConfig().getValue(key).valueType().name().equals("OBJECT")){
+                if (config.toConfig().getValue(key).valueType().name().equals("OBJECT")) {
                     build(config.toConfig().getObject(key), leaf);
                 }
 
-            } catch(Exception ignored){}
+            } catch (Exception ignored) {
+            }
 
         }
     }
 
     public TreeView<String> getTreeView(){
-        return finalTree;
+        return tree;
     }
 
 }
