@@ -10,11 +10,14 @@ class TreeBuilder {
 
     private TreeView<String> finalTree;
 
-    TreeBuilder(ConfigObject config){
+    TreeBuilder(final ConfigObject config, final MainUI UI){
 
-        TreeItem<String> root = new TreeItem<String> ("Configuration");
+        TreeItem<String> root = new TreeItem<> ("Configuration");
 
         finalTree = new TreeView<>(root);
+        finalTree.getSelectionModel().selectedItemProperty().addListener((observable, oldVal, newVal) ->
+                UI.changeEditingEntry(newVal, config)
+        );
 
         build(config, root);
 
@@ -27,17 +30,14 @@ class TreeBuilder {
             try{
                 Map.Entry entry = keys.next();
                 String key = (String) entry.getKey();
-                Object value = entry.getValue();
-                TreeItem<String> leaf = new TreePair(key, value).getItem();
+                TreeItem<String> leaf = new TreeItem<>(key);
                 root.getChildren().add(leaf);
-                
+
                 if (config.toConfig().getValue(key).valueType().name().equals("OBJECT")){
                     build(config.toConfig().getObject(key), leaf);
                 }
 
-            } catch(Exception ignored){
-
-            }
+            } catch(Exception ignored){}
 
         }
     }
