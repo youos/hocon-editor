@@ -1,3 +1,5 @@
+package com.youos.hoconeditor.selector;
+
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.control.Button;

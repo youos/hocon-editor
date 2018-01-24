@@ -1,15 +1,18 @@
+package com.youos.hoconeditor.editor;
+
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValue;
+import com.youos.hoconeditor.ConfigManager;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 
 import java.util.Map;
 
-class TreeBuilder {
+public class Tree {
 
     private TreeView<String> tree;
 
-    TreeBuilder(final ConfigObject config, final MainUI UI, Loader loader){
+    public Tree(EditorUI UI, ConfigManager configManager){
 
         TreeItem<String> root = new TreeItem<> ("Configuration");
 
@@ -17,10 +20,10 @@ class TreeBuilder {
         tree.setMaxWidth(350);
         tree.setShowRoot(false);
         tree.getSelectionModel().selectedItemProperty().addListener((observable, oldVal, newVal) ->
-                UI.changeEditingEntry(newVal, loader.getFullConfig())
+                UI.changeEditingEntry(newVal, configManager.getFullConfig())
         );
 
-        build(config, root);
+        build(configManager.getFullConfig(), root);
     }
 
     private void build(ConfigObject config, TreeItem<String> root){

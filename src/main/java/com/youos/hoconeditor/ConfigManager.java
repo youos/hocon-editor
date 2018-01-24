@@ -1,3 +1,5 @@
+package com.youos.hoconeditor;
+
 import com.typesafe.config.*;
 
 import java.io.File;
@@ -9,13 +11,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Objects;
 
-public class Loader {
+public class ConfigManager {
 
     private ArrayList<Config> configs = new ArrayList<>();
     private Config applicationConfig;
     private Config fullConfig;
 
-    Loader(ArrayList<Path> directions){
+    public ConfigManager(ArrayList<Path> directions){
         for (Path path : directions) buildConfigs(path);
         createFinal();
     }
@@ -28,10 +30,10 @@ public class Loader {
     }
 
     public void setFullConfig(ConfigObject config){
-        this.fullConfig = config.toConfig();
+        fullConfig = config.toConfig().withFallback(fullConfig).resolve();
     }
     public void setApplicationConfig(ConfigObject config){
-        this.applicationConfig = config.toConfig();
+        applicationConfig = config.toConfig().withFallback(applicationConfig).resolve();
     }
 
 
@@ -83,9 +85,9 @@ public class Loader {
         public int compare(Config c1, Config c2) {
             String file1 = new File(c1.origin().description()).getName();
             String file2 = new File(c2.origin().description()).getName();
-            if(file1.contains("application.conf")) return -1;
+            if(file1.contains("application.conf")) return 1;
             if(file1.equals(file2)) return 0;
-            return 1;
+            return -1;
         }
     }
 
@@ -95,12 +97,12 @@ public class Loader {
             if (new File(conf.origin().description()).getName().contains("application.conf")) applicationCount++;
         }
         if (applicationCount < 2) {
-            //TODO Kick application.conf or show ErrorMessage
+            //TODO show ErrorMessage
         }
 
     }
 
-    String getExtension(File file){
+    private String getExtension(File file){
         String extension = "";
         int i = file.getName().lastIndexOf('.');
         if (i > 0) {
@@ -111,6 +113,10 @@ public class Loader {
 
     private void damagedData(Config config){
         //TODO Message for damaged data in path config.origin()
+    }
+
+    public void saveDataToFile(){
+        //TODO Write Config into application.conf
     }
 
 }

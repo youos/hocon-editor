@@ -1,7 +1,8 @@
+package com.youos.hoconeditor.selector;
+
+import com.youos.hoconeditor.editor.EditorUI;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -106,26 +107,19 @@ public class SelectorUI extends Application {
     }
 
     private Button[] prepareActionListener(Button startBtn, Button addBtn, final Stage primaryStage){
-        addBtn.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent event) {
-                addSelector(primaryStage);
-            }
-        });
+        addBtn.setOnAction(event -> addSelector(primaryStage));
 
-        startBtn.setOnAction(new EventHandler<ActionEvent>() {
-            public void handle(ActionEvent event) {
-                ArrayList<Path> finalDirections = new ArrayList<>();
-                for (TextField field : getAllTextFields(innerGrid)) finalDirections.add(Paths.get(field.getText()));
-                for (Path path : finalDirections){
-                    if (Files.notExists(path)){
-                        //TODO Insert Error Message
-                        return;
-                    }
+        startBtn.setOnAction(event -> {
+            ArrayList<Path> finalDirections = new ArrayList<>();
+            for (TextField field : getAllTextFields(innerGrid)) finalDirections.add(Paths.get(field.getText()));
+            for (Path path : finalDirections){
+                if (Files.notExists(path)){
+                    //TODO Insert Error Message
+                    return;
                 }
-                primaryStage.hide();
-                new MainUI(finalDirections, primaryStage);
             }
-
+            primaryStage.hide();
+            new EditorUI(finalDirections, primaryStage);
         });
 
         return new Button[]{startBtn, addBtn};
