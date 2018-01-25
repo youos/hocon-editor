@@ -41,12 +41,15 @@ public class ConfigManager {
         ConfigParseOptions options = ConfigParseOptions.defaults();
         for (File file : Objects.requireNonNull(new File(dir.toString()).listFiles())) {
             String ext = getExtension(file);
-            if (ext.equals("jar")) configs.add(parseJar(file, "reference.conf"));
-            try {
-                if (file.getName().equals("application.conf") || file.getName().equals("reference.conf")){
-                    configs.add(ConfigFactory.parseFile(file, options));
-                }
-            } catch (ConfigException | NullPointerException ignored){}
+            if (ext.equals("jar")) configs.add(parseJar(file));
+            else{
+                try {
+                    if (file.getName().equals("application.conf") || file.getName().equals("reference.conf")){
+                        configs.add(ConfigFactory.parseFile(file, options));
+                    }
+                } catch (ConfigException | NullPointerException ignored){}
+            }
+
         }
         configs.removeAll(Collections.singleton(null));
 
@@ -55,9 +58,9 @@ public class ConfigManager {
         }
     }
 
-    private Config parseJar(File jarFile, String whichConfig) {
+    private Config parseJar(File jarFile) {
         try {
-            URL url = new URL("jar:file:" + jarFile.getAbsolutePath() + "!/" + whichConfig);
+            URL url = new URL("jar:file:" + jarFile.getAbsolutePath() + "!/reference.conf");
             return ConfigFactory.parseURL(url);
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -71,7 +74,7 @@ public class ConfigManager {
         applicationConfig = configs.get(configs.size() - 1); //Copy it into a variable
         Config finalConfig = configs.get(0); //Continue with all files (reference.conf and application.conf)
         for (Config conf : configs) {
-            try{finalConfig = finalConfig.withFallback(configs.get(configs.indexOf(conf) + 1).resolve());}
+            try{finalConfig = configs.get(configs.indexOf(conf) + 1).resolve().withFallback(finalConfig);}
             catch(java.lang.IndexOutOfBoundsException ignored){}
             catch(ConfigException e){
                 damagedData(configs.get(configs.indexOf(conf) + 1));
@@ -104,7 +107,7 @@ public class ConfigManager {
 
     private String getExtension(File file){
         String extension = "";
-        int i = file.getName().lastIndexOf('.');
+        int i = file.getName().lastIndexOf(".");
         if (i > 0) {
             extension = file.getName().substring(i + 1);
         }

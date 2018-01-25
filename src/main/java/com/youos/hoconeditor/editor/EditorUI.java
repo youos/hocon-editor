@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 /*
 
-0. Struktur
 1. Fehlermeldung bei mehreren application.confs
 2. Fehlermeldungen generell
 3. Eintrag löschen Backend
@@ -32,7 +31,7 @@ public class EditorUI {
     private Stage selectorStage;
     private Stage mainStage;
 
-    private TextField valueField = new TextField();
+    private TextArea valueField = new TextArea();
     private Text pathField = new Text();
     private Text typeField = new Text();
     private TextArea fileField = new TextArea();
@@ -57,16 +56,14 @@ public class EditorUI {
         this.configManager = new ConfigManager(dir);
         this.editor = new Editor();
 
-        pathField.setFill(Color.RED);
-        valueField.setDisable(true);
-        valueField.setMaxWidth(300);
-        typeField.setFill(Color.GREEN);
         fileField.setMaxSize(300, 40);
         fileField.setEditable(false);
+        pathField.setFill(Color.RED);
         commentField.setMaxSize(300, 40);
-        commentField.setEditable(false);
+        typeField.setFill(Color.GREEN);
+        valueField.setMaxSize(300, 40);
         editBtn.setDisable(true);
-        editBtn.setPrefWidth(70);
+        editBtn.setPrefSize(70, 40);
 
         Label pathLabel = new Label("Path : ");
         Label valueLabel = new Label("Value : ");
@@ -122,7 +119,6 @@ public class EditorUI {
         String value = editor.getValue();
         Boolean btnDisabled = editor.getBtnDisabled();
 
-        editBtn.setText("EDIT");
         editBtn.setDisable(btnDisabled);
 
         fileField.setText(file);
@@ -142,27 +138,19 @@ public class EditorUI {
     }
 
     private void prepareEvents(){
-        editBtn.setOnAction((ActionEvent event) -> {
-            if (valueField.isDisabled()){
-                valueField.setDisable(false);
-                editBtn.setText("OK");
-            } else {
-
-                //Edit Entry
-
-                valueField.setDisable(true);
-
-                //Rebuild Backend
-                editor.editEntryInConfig(valueField.getText(), configManager);
-
-                //Rebuild Frontend
-                changeEditingEntry(editor.getItem(), configManager.getFullConfig());
-                tree = buildTree();
-            }
-        });
+        editBtn.setOnAction(event -> editEntry());
         openBtn.setOnAction(event -> selectNewFolders());
         saveBtn.setOnAction(event -> configManager.saveDataToFile());
         deleteBtn.setOnAction(event -> deleteSelectedEntry());
+    }
+
+    private void editEntry(){
+        //Rebuild Backend
+        editor.editEntryInConfig(valueField.getText(), commentField.getText(), configManager);
+
+        //Rebuild Frontend
+        changeEditingEntry(editor.getItem(), configManager.getFullConfig());
+        tree = buildTree();
     }
 
 }

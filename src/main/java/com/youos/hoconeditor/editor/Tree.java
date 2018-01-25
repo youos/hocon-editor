@@ -12,7 +12,7 @@ public class Tree {
 
     private TreeView<String> tree;
 
-    public Tree(EditorUI UI, ConfigManager configManager){
+    Tree(EditorUI UI, ConfigManager configManager){
 
         TreeItem<String> root = new TreeItem<> ("Configuration");
 
