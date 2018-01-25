@@ -1,39 +1,46 @@
 package com.youos.hoconeditor;
 
 import com.typesafe.config.*;
+import com.typesafe.config.parser.ConfigDocument;
+import com.typesafe.config.parser.ConfigDocumentFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Objects;
+import java.nio.file.Paths;
+import java.util.*;
 
 public class ConfigManager {
 
     private ArrayList<Config> configs = new ArrayList<>();
+
     private Config applicationConfig;
     private Config fullConfig;
+
+    private boolean ready = false;
 
     public ConfigManager(ArrayList<Path> directions){
         for (Path path : directions) buildConfigs(path);
         createFinal();
     }
 
-    public ConfigObject getFullConfig(){
-        return fullConfig.root();
+    public Config getFullConfig(){return fullConfig;}
+
+    public Config getApplicationConfig(){return applicationConfig;}
+
+    public void setFullConfig(Config config){
+        fullConfig = config;
     }
-    public ConfigObject getApplicationConfig(){
-        return applicationConfig.root();
+    public void setApplicationConfig(Config config){
+        applicationConfig = config;
     }
 
-    public void setFullConfig(ConfigObject config){
-        fullConfig = config.toConfig().withFallback(fullConfig).resolve();
-    }
-    public void setApplicationConfig(ConfigObject config){
-        applicationConfig = config.toConfig().withFallback(applicationConfig).resolve();
+    public boolean isReady(){
+        return ready;
     }
 
 
@@ -70,7 +77,10 @@ public class ConfigManager {
 
     private void createFinal(){
         configs.sort(new ConfigComparison()); //Move application.conf to the end of the list
-        checkApplicationCount();
+        if (getApplicationCount() > 1){
+            ready = false;
+            return;
+        }
         applicationConfig = configs.get(configs.size() - 1); //Copy it into a variable
         Config finalConfig = configs.get(0); //Continue with all files (reference.conf and application.conf)
         for (Config conf : configs) {
@@ -81,6 +91,7 @@ public class ConfigManager {
             }
         }
         fullConfig = finalConfig.resolve();
+        ready = true;
     }
 
     class ConfigComparison implements Comparator<Config> {
@@ -94,17 +105,6 @@ public class ConfigManager {
         }
     }
 
-    private void checkApplicationCount(){
-        int applicationCount = 0;
-        for (Config conf : configs){
-            if (new File(conf.origin().description()).getName().contains("application.conf")) applicationCount++;
-        }
-        if (applicationCount < 2) {
-            //TODO show ErrorMessage
-        }
-
-    }
-
     private String getExtension(File file){
         String extension = "";
         int i = file.getName().lastIndexOf(".");
@@ -114,12 +114,23 @@ public class ConfigManager {
         return extension;
     }
 
+    public int getApplicationCount(){
+        int count = 0;
+        for (Config c : configs){
+            if (new File(c.origin().filename()).getName().equals("application.conf")) count++;
+        }
+        return count;
+    }
+
     private void damagedData(Config config){
         //TODO Message for damaged data in path config.origin()
     }
 
-    public void saveDataToFile(){
-        //TODO Write Config into application.conf
+    public void saveDataToFile() {
+        //TODO Write applicationConfig into application.conf
+        ConfigRenderOptions options = ConfigRenderOptions.defaults().setOriginComments(false).setFormatted(true).setComments(true);
+        String configRawString = getApplicationConfig().root().render(options);
+        ConfigDocument config = ConfigDocumentFactory.parseString(configRawString);
     }
 
 }

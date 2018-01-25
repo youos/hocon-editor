@@ -1,5 +1,6 @@
 package com.youos.hoconeditor.selector;
 
+import com.youos.hoconeditor.ConfigManager;
 import com.youos.hoconeditor.editor.EditorUI;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
@@ -7,6 +8,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
@@ -114,12 +116,29 @@ public class SelectorUI extends Application {
             for (TextField field : getAllTextFields(innerGrid)) finalDirections.add(Paths.get(field.getText()));
             for (Path path : finalDirections){
                 if (Files.notExists(path)){
-                    //TODO Insert Error Message
+                    //TODO Insert Error Message Path does not exist
                     return;
                 }
             }
-            primaryStage.hide();
-            new EditorUI(finalDirections, primaryStage);
+            ConfigManager manager = new ConfigManager(finalDirections);
+            if (manager.isReady()){
+
+                //Hide selector window
+                primaryStage.hide();
+
+                //Open editor window
+                new EditorUI(manager, primaryStage);
+
+            } else {
+
+                //Message for having more than one application.conf file in resources
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Information");
+                alert.setHeaderText(null);
+                alert.setContentText("There are " + manager.getApplicationCount() + " application.conf files " +
+                        "in your selected folders. Please ensure that there is only one application.conf");
+                alert.showAndWait();
+            }
         });
 
         return new Button[]{startBtn, addBtn};

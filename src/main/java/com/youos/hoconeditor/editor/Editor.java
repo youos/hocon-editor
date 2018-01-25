@@ -49,20 +49,22 @@ class Editor {
 
     Editor(){}
 
-    void setup(TreeItem<String> item, ConfigObject config){
+    void setup(TreeItem<String> item, Config config){
         this.item = item;
-        TreeItem<String> editItem = item;
+
+        //Build path string separated by dots
         StringBuilder path = new StringBuilder();
-        for (; editItem.getParent() != null; editItem = editItem.getParent()){
+        for (TreeItem<String> editItem = item; editItem.getParent() != null; editItem = editItem.getParent()){
             String dot = path.toString().equals("") ? "" : ".";
             path.insert(0, editItem.getValue() + dot);
         }
+
         editPath = path.toString();
-        editFile = config.toConfig().getValue(path.toString()).origin().description();
+        editFile = config.getValue(path.toString()).origin().description();
         editFile = editFile.substring(0, editFile.lastIndexOf(":"));
 
         if (item.isLeaf()){
-            ConfigValue value = config.toConfig().getValue(path.toString());
+            ConfigValue value = config.getValue(path.toString());
             List<String> comments = value.origin().comments();
             editValue = value.render(renderOptions);
             editType = value.valueType().name();
@@ -77,18 +79,37 @@ class Editor {
     }
 
     void editEntryInConfig(String value, String comment, ConfigManager manager){
+
         String configString = "#" + comment + "\n" + editPath + "=" + value;
-        String changed = "(Edited) ";
-        String oldValue = manager.getFullConfig().toConfig().getValue(editPath).render(renderOptions);
-        List<String> oldComments = manager.getFullConfig().toConfig().getValue(editPath).origin().comments();
+
+        //Determine if fileField needs "(edited)" phrase
+        String edited = "(Edited) ";
+        String oldValue = manager.getFullConfig().getValue(editPath).render(renderOptions);
+        List<String> oldComments = manager.getFullConfig().getValue(editPath).origin().comments();
         String oldComment = oldComments.size() > 0 ? oldComments.get(0) : "";
-        if (oldValue.equals(value) && oldComment.equals(comment) || editFile.contains(changed)) changed = "";
-        ConfigParseOptions parseOptions = ConfigParseOptions.defaults().setOriginDescription(changed + editFile);
+        if (oldValue.equals(value) && oldComment.equals(comment) || editFile.contains(edited)) edited = "";
+
+        //Parsing String to new Config and merge it with both main Configs while this Config will "win"
+        ConfigParseOptions parseOptions = ConfigParseOptions.defaults().setOriginDescription(edited + editFile);
         Config addConf = ConfigFactory.parseString(configString, parseOptions);
+        Config newFullConf = addConf.withFallback(manager.getFullConfig());
+        Config newApplicationConf = addConf.withFallback(manager.getApplicationConfig());
 
         //Apply changes to main configs
-        manager.setFullConfig(addConf.root());
-        manager.setApplicationConfig(addConf.root());
+        manager.setFullConfig(newFullConf);
+        manager.setApplicationConfig(newApplicationConf);
+    }
+
+    void deleteSelectedEntry(ConfigManager manager){
+        String path = getPath();
+
+        //Remove selected path from main configs
+        Config newFullConf = manager.getFullConfig().withoutPath(path);
+        Config newApplicationConf = manager.getApplicationConfig().withoutPath(path);
+
+        //Apply changes to main configs
+        manager.setFullConfig(newFullConf);
+        manager.setApplicationConfig(newApplicationConf);
     }
 
 }

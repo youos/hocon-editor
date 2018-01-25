@@ -1,8 +1,7 @@
 package com.youos.hoconeditor.editor;
 
-import com.typesafe.config.ConfigObject;
+import com.typesafe.config.Config;
 import com.youos.hoconeditor.ConfigManager;
-import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -12,18 +11,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
-
-import java.nio.file.Path;
-import java.util.ArrayList;
-
-
-/*
-
-1. Fehlermeldung bei mehreren application.confs
-2. Fehlermeldungen generell
-3. Eintrag löschen Backend
-
- */
+import java.util.Optional;
 
 
 public class EditorUI {
@@ -42,19 +30,17 @@ public class EditorUI {
     private Button saveBtn = new Button("Apply Changes");
     private Button deleteBtn = new Button("Delete Entry");
 
-    private TreeView<String> tree;
+    private Alert deleteAlert = new Alert(Alert.AlertType.CONFIRMATION);
 
     private ConfigManager configManager;
     private Editor editor;
+    private Tree tree;
 
-    private TreeView<String> buildTree(){
-        return new Tree(this, configManager).getTreeView();
-    }
-
-    public EditorUI(ArrayList<Path> dir, Stage selectorStage){
+    public EditorUI(ConfigManager manager, Stage selectorStage){
         this.selectorStage = selectorStage;
-        this.configManager = new ConfigManager(dir);
+        this.configManager = manager;
         this.editor = new Editor();
+        this.tree = new Tree(this, configManager);
 
         fileField.setMaxSize(300, 40);
         fileField.setEditable(false);
@@ -64,6 +50,7 @@ public class EditorUI {
         valueField.setMaxSize(300, 40);
         editBtn.setDisable(true);
         editBtn.setPrefSize(70, 40);
+        deleteBtn.setDisable(true);
 
         Label pathLabel = new Label("Path : ");
         Label valueLabel = new Label("Value : ");
@@ -88,8 +75,8 @@ public class EditorUI {
         editPane.add(valueField, 1, 4);
         editPane.add(editBtn, 2, 4);
 
-        tree = buildTree();
         prepareEvents();
+        messageDialogsSetup();
 
         ToolBar toolBar = new ToolBar(openBtn, saveBtn, deleteBtn);
         toolBar.setPrefWidth(900);
@@ -97,7 +84,7 @@ public class EditorUI {
         toolGrid.setMaxHeight(toolBar.getHeight());
         toolGrid.add(toolBar, 0, 0);
         SplitPane hSplitter = new SplitPane();
-        hSplitter.getItems().addAll(tree, editPane);
+        hSplitter.getItems().addAll(tree.getTreeView(), editPane);
         SplitPane vSplitter = new SplitPane();
         SplitPane.setResizableWithParent(vSplitter, false);
         vSplitter.setOrientation(Orientation.VERTICAL);
@@ -108,7 +95,7 @@ public class EditorUI {
         mainStage.show();
     }
 
-    public void changeEditingEntry(TreeItem<String> item, ConfigObject config){
+    void changeEditingEntry(TreeItem<String> item, Config config){
 
         editor.setup(item, config);
 
@@ -120,6 +107,7 @@ public class EditorUI {
         Boolean btnDisabled = editor.getBtnDisabled();
 
         editBtn.setDisable(btnDisabled);
+        deleteBtn.setDisable(false);
 
         fileField.setText(file);
         pathField.setText(path);
@@ -128,20 +116,28 @@ public class EditorUI {
         valueField.setText(value);
     }
 
-    private void deleteSelectedEntry(){
-        //TODO Delete selected Entry from Tree
-    }
-
     private void selectNewFolders(){
         mainStage.hide();
         selectorStage.show();
+    }
+
+    private void messageDialogsSetup(){
+        deleteAlert.setTitle("Confirm");
+        deleteAlert.setHeaderText("Are you sure you want to remove this entry?");
     }
 
     private void prepareEvents(){
         editBtn.setOnAction(event -> editEntry());
         openBtn.setOnAction(event -> selectNewFolders());
         saveBtn.setOnAction(event -> configManager.saveDataToFile());
-        deleteBtn.setOnAction(event -> deleteSelectedEntry());
+        deleteBtn.setOnAction(event -> {
+            deleteAlert.setContentText("Key to be removed: \n" + editor.getPath());
+            Optional<ButtonType> result = deleteAlert.showAndWait();
+            if (result.get() == ButtonType.OK){
+                editor.deleteSelectedEntry(configManager);
+                tree.remove(editor.getItem());
+            }
+        });
     }
 
     private void editEntry(){
@@ -150,7 +146,7 @@ public class EditorUI {
 
         //Rebuild Frontend
         changeEditingEntry(editor.getItem(), configManager.getFullConfig());
-        tree = buildTree();
+
     }
 
 }

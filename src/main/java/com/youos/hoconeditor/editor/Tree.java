@@ -1,6 +1,6 @@
 package com.youos.hoconeditor.editor;
 
-import com.typesafe.config.ConfigObject;
+import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
 import com.youos.hoconeditor.ConfigManager;
 import javafx.scene.control.TreeItem;
@@ -24,25 +24,38 @@ public class Tree {
         );
 
         build(configManager.getFullConfig(), root);
+
     }
 
-    private void build(ConfigObject config, TreeItem<String> root){
+    private void build(Config config, TreeItem<String> root){
 
-        for (Map.Entry<String, ConfigValue> stringConfigValueEntry : config.entrySet()) {
-            try {
-                String key = (String) ((Map.Entry) stringConfigValueEntry).getKey();
-                TreeItem<String> leaf = new TreeItem<>(key);
-                root.getChildren().add(leaf);
+        for (Map.Entry<String, ConfigValue> stringConfigValueEntry : config.root().entrySet()) {
 
-                if (config.toConfig().getValue(key).valueType().name().equals("OBJECT")) {
-                    build(config.toConfig().getObject(key), leaf);
-                }
+            String key = (String) ((Map.Entry) stringConfigValueEntry).getKey();
+            TreeItem<String> leaf = new TreeItem<>(key);
+            root.getChildren().add(leaf);
 
-            } catch (Exception ignored) {
+            if (config.getValue(key).valueType().name().equals("OBJECT")) {
+                build(config.getObject(key).toConfig(), leaf);
             }
-
         }
     }
+
+    void remove(TreeItem<String> treeItem){
+        checkTree(treeItem, tree.getRoot());
+    }
+
+    private void checkTree(TreeItem<String> itemToRemove, TreeItem<String> root){
+        for (TreeItem<String> item : root.getChildren()){
+            if (item.equals(itemToRemove)){
+                root.getChildren().remove(item);
+                break;
+            } else {
+                checkTree(itemToRemove, item);
+            }
+        }
+    }
+
 
     public TreeView<String> getTreeView(){
         return tree;
