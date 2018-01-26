@@ -11,7 +11,22 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+
 import java.util.Optional;
+
+/**
+ * Class EditorUI:
+ *
+ * This class manages the whole user interface containing -->
+ *      TreeView to the left
+ *      Editor grid to the right
+ *      Toolbar on the top
+ *
+ * and the setup method for alerts
+ *
+ * Events triggered in this interface lead to Editor.java in most cases
+ *
+ */
 
 
 public class EditorUI {
@@ -30,8 +45,6 @@ public class EditorUI {
     private Button saveBtn = new Button("Apply Changes");
     private Button deleteBtn = new Button("Delete Entry");
 
-    private Alert deleteAlert = new Alert(Alert.AlertType.CONFIRMATION);
-
     private ConfigManager configManager;
     private Editor editor;
     private Tree tree;
@@ -42,6 +55,7 @@ public class EditorUI {
         this.editor = new Editor();
         this.tree = new Tree(this, configManager);
 
+        //Setting properties for Frontend elements of the editor
         fileField.setMaxSize(300, 40);
         fileField.setEditable(false);
         pathField.setFill(Color.RED);
@@ -58,6 +72,7 @@ public class EditorUI {
         Label fileLabel = new Label("File : ");
         Label commentLabel = new Label("Comment : ");
 
+        //Add elements to a grid for ordered view
         GridPane editPane = new GridPane();
         editPane.setVgap(10);
         editPane.setHgap(10);
@@ -75,9 +90,14 @@ public class EditorUI {
         editPane.add(valueField, 1, 4);
         editPane.add(editBtn, 2, 4);
 
+        //Action listener
         prepareEvents();
-        messageDialogsSetup();
 
+        /**Basic view:
+         * Content A: Toolbar
+         * Content B: Tree -- Editor
+         * Split Contents vertically
+         */
         ToolBar toolBar = new ToolBar(openBtn, saveBtn, deleteBtn);
         toolBar.setPrefWidth(900);
         GridPane toolGrid = new GridPane();
@@ -89,6 +109,8 @@ public class EditorUI {
         SplitPane.setResizableWithParent(vSplitter, false);
         vSplitter.setOrientation(Orientation.VERTICAL);
         vSplitter.getItems().addAll(toolGrid, hSplitter);
+
+        //Setting up Stage and show it
         mainStage = new Stage();
         mainStage.setTitle(selectorStage.getTitle());
         mainStage.setScene(new Scene(vSplitter, 900, 800));
@@ -97,8 +119,10 @@ public class EditorUI {
 
     void changeEditingEntry(TreeItem<String> item, Config config){
 
+        //Editor setup to determine properties of TreeItem
         editor.setup(item, config);
 
+        //Reading out properties
         String file = editor.getFile();
         String path = editor.getPath();
         String comment = editor.getComment();
@@ -106,35 +130,41 @@ public class EditorUI {
         String value = editor.getValue();
         Boolean btnDisabled = editor.getBtnDisabled();
 
-        editBtn.setDisable(btnDisabled);
-        deleteBtn.setDisable(false);
-
+        //Set them into view
         fileField.setText(file);
         pathField.setText(path);
         commentField.setText(comment);
         typeField.setText(type);
         valueField.setText(value);
+
+        editBtn.setDisable(btnDisabled);
+        deleteBtn.setDisable(false);
     }
 
     private void selectNewFolders(){
+
+        //Close window and open selectorStage to select new directories
         mainStage.hide();
         selectorStage.show();
-    }
 
-    private void messageDialogsSetup(){
-        deleteAlert.setTitle("Confirm");
-        deleteAlert.setHeaderText("Are you sure you want to remove this entry?");
     }
 
     private void prepareEvents(){
+
+        //Action events for toolbar and edit buttons
         editBtn.setOnAction(event -> editEntry());
         openBtn.setOnAction(event -> selectNewFolders());
         saveBtn.setOnAction(event -> configManager.saveDataToFile());
         deleteBtn.setOnAction(event -> {
-            deleteAlert.setContentText("Key to be removed: \n" + editor.getPath());
-            Optional<ButtonType> result = deleteAlert.showAndWait();
-            if (result.get() == ButtonType.OK){
+
+            //Confirm before continue removing the element
+            if (showAlert("Confirm", "Are you sure you want to remove this entry?",
+                    "Key to be removed: \n" + editor.getPath(), Alert.AlertType.CONFIRMATION)) {
+
+                //Remove item in Backend (both config variables)
                 editor.deleteSelectedEntry(configManager);
+
+                //Remove item in Frontend (visual TreeView)
                 tree.remove(editor.getItem());
             }
         });
@@ -147,6 +177,17 @@ public class EditorUI {
         //Rebuild Frontend
         changeEditingEntry(editor.getItem(), configManager.getFullConfig());
 
+    }
+
+    public static boolean showAlert(String title, String header, String content, Alert.AlertType type){
+
+        //Show alert for warnings, problems, errors (specified by type)
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.get() == ButtonType.OK;
     }
 
 }

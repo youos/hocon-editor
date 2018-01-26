@@ -7,15 +7,21 @@ import javafx.stage.Stage;
 
 import java.io.File;
 
+/**
+ * Class Selector:
+ *
+ * Class to create an Object holding the fields button and field
+ */
+
 public class Selector {
 
     private Button button = new Button();
 
-    private TextField field = new TextField("C:\\Users\\Benjamin\\Documents\\Programming\\Java\\IntelliJ IDEA\\hocon-editor\\src\\main\\resources");
+    private TextField field = new TextField();
 
     Selector(final Stage stage){
         field.setPrefWidth(800);
-        //field.setText("No directory selected");
+        field.setText("No directory selected");
         button.setPrefWidth(100);
         button.setText("Select");
         button.setOnAction(event -> {

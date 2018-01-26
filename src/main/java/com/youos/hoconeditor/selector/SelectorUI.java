@@ -29,6 +29,10 @@ public class SelectorUI extends Application {
 
     public static void main(String[] args){launch();}
 
+    /**
+     * Builds frontend of first window, the selectorStage to select directories
+     * @param primaryStage Stage to build on
+     */
     @Override
     public void start(final Stage primaryStage) {
         primaryStage.setTitle("HOCON Viewer");
@@ -69,6 +73,10 @@ public class SelectorUI extends Application {
         primaryStage.show();
     }
 
+    /**
+     * Adds Selector pair of textField and button for the user
+     * @param stage Stage to help building the selector
+     */
     private void addSelector(Stage stage){
         Selector selector = new Selector(stage);
 
@@ -81,6 +89,10 @@ public class SelectorUI extends Application {
         outerGrid.add(innerGrid, 0, 1, 2, 1);
     }
 
+    /**
+     * @param grid GridPane to be analyzed
+     * @return row count of grid
+     */
     private int getRowCount(GridPane grid) {
         int numRows = grid.getRowConstraints().size();
         for (int i = 0; i < grid.getChildren().size(); i++) {
@@ -95,31 +107,45 @@ public class SelectorUI extends Application {
         return numRows;
     }
 
+    /**
+     * @param grid Gridpane containing textFields
+     * @return Array with textFields found in grid
+     */
     private TextField[] getAllTextFields(GridPane grid) {
         TextField[] fields = new TextField[getRowCount(grid)];
         ObservableList<Node> children = grid.getChildren();
-
         for (Node node : children) {
             if(GridPane.getColumnIndex(node) == 0) {
                 fields[GridPane.getRowIndex(node)] = (TextField) node;
             }
         }
-
         return fields;
     }
 
+    /**
+     * Puts Action Listener on start and add button
+     *
+     * @param startBtn button to start manager
+     * @param addBtn button to add directions
+     * @param primaryStage Stage of this window
+     * @return Array with buttons that have action listeners
+     */
     private Button[] prepareActionListener(Button startBtn, Button addBtn, final Stage primaryStage){
         addBtn.setOnAction(event -> addSelector(primaryStage));
 
         startBtn.setOnAction(event -> {
+
+            //Check if every textField holds a valid existing path
             ArrayList<Path> finalDirections = new ArrayList<>();
             for (TextField field : getAllTextFields(innerGrid)) finalDirections.add(Paths.get(field.getText()));
             for (Path path : finalDirections){
                 if (Files.notExists(path)){
-                    //TODO Insert Error Message Path does not exist
+                    EditorUI.showAlert("Error", null, "The directory \"" + path.toString() + "\" does not exist!", Alert.AlertType.ERROR);
                     return;
                 }
             }
+
+            //Start ConfigManager and continue if he has finished reading the files
             ConfigManager manager = new ConfigManager(finalDirections);
             if (manager.isReady()){
 
@@ -128,16 +154,6 @@ public class SelectorUI extends Application {
 
                 //Open editor window
                 new EditorUI(manager, primaryStage);
-
-            } else {
-
-                //Message for having more than one application.conf file in resources
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Information");
-                alert.setHeaderText(null);
-                alert.setContentText("There are " + manager.getApplicationCount() + " application.conf files " +
-                        "in your selected folders. Please ensure that there is only one application.conf");
-                alert.showAndWait();
             }
         });
 

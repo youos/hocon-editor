@@ -1,6 +1,7 @@
 package com.youos.hoconeditor.editor;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigValue;
 import com.youos.hoconeditor.ConfigManager;
 import javafx.scene.control.TreeItem;
@@ -35,9 +36,11 @@ public class Tree {
             TreeItem<String> leaf = new TreeItem<>(key);
             root.getChildren().add(leaf);
 
-            if (config.getValue(key).valueType().name().equals("OBJECT")) {
-                build(config.getObject(key).toConfig(), leaf);
-            }
+            try{
+                if (config.root().get(key).valueType().name().equals("OBJECT")) {
+                    build(config.getObject(key).toConfig(), leaf);
+                }
+            } catch (ConfigException ignored){}
         }
     }
 

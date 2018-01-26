@@ -50,6 +50,7 @@ class Editor {
     Editor(){}
 
     void setup(TreeItem<String> item, Config config){
+        config = config.resolve();
         this.item = item;
 
         //Build path string separated by dots
@@ -60,8 +61,7 @@ class Editor {
         }
 
         editPath = path.toString();
-        editFile = config.getValue(path.toString()).origin().description();
-        editFile = editFile.substring(0, editFile.lastIndexOf(":"));
+        editFile = ConfigManager.rawFileString(config.getValue(editPath).origin().description(), true);
 
         if (item.isLeaf()){
             ConfigValue value = config.getValue(path.toString());
@@ -80,7 +80,8 @@ class Editor {
 
     void editEntryInConfig(String value, String comment, ConfigManager manager){
 
-        String configString = "#" + comment + "\n" + editPath + "=" + value;
+        String commentString = comment.isEmpty() ? "" : "#" + comment + "\n";
+        String configString =  commentString + editPath + "=" + value;
 
         //Determine if fileField needs "(edited)" phrase
         String edited = "(Edited) ";
