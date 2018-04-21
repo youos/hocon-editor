@@ -31,14 +31,16 @@ import java.util.Optional;
 
 public class EditorUI {
 
+
+
     private Stage selectorStage;
     private Stage mainStage;
 
-    private TextArea valueField = new TextArea();
-    private Text pathField = new Text();
-    private Text typeField = new Text();
     private TextArea fileField = new TextArea();
+    private Text pathField = new Text();
     private TextArea commentField = new TextArea();
+    private Text typeField = new Text();
+    private TextArea valueField = new TextArea();
 
     private Button editBtn = new Button("Edit");
     private Button openBtn = new Button("Open New Directory");
@@ -48,6 +50,8 @@ public class EditorUI {
     private ConfigManager configManager;
     private Editor editor;
     private Tree tree;
+
+
 
     public EditorUI(ConfigManager manager, Stage selectorStage){
         this.selectorStage = selectorStage;
@@ -93,7 +97,7 @@ public class EditorUI {
         //Action listener
         prepareEvents();
 
-        /**Basic view:
+        /*Basic view:
          * Content A: Toolbar
          * Content B: Tree -- Editor
          * Split Contents vertically
@@ -171,13 +175,15 @@ public class EditorUI {
     }
 
     private void editEntry(){
+
         //Rebuild Backend
         editor.editEntryInConfig(valueField.getText(), commentField.getText(), configManager);
 
         //Rebuild Frontend
         changeEditingEntry(editor.getItem(), configManager.getFullConfig());
-
     }
+
+
 
     public static boolean showAlert(String title, String header, String content, Alert.AlertType type){
 

@@ -21,11 +21,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 
 public class SelectorUI extends Application {
-
-    private GridPane outerGrid = new GridPane(),
-                     innerGrid = new GridPane();
 
     public static void main(String[] args){launch();}
 
@@ -37,38 +35,10 @@ public class SelectorUI extends Application {
     public void start(final Stage primaryStage) {
         primaryStage.setTitle("HOCON Viewer");
 
-        outerGrid.setAlignment(Pos.CENTER);
-        outerGrid.setHgap(10);
-        outerGrid.setVgap(5);
-        outerGrid.setPadding(new Insets(25, 25, 25, 25));
+        GridPane mainGrid = initializeGrid(primaryStage);
 
-        innerGrid.setAlignment(Pos.CENTER);
-        innerGrid.setHgap(10);
-        innerGrid.setVgap(5);
+        Scene scene = new Scene(mainGrid, 900, 400);
 
-        GridPane start_addGrid = new GridPane();
-        start_addGrid.setAlignment(Pos.CENTER);
-        start_addGrid.setHgap(5);
-
-        Text sceneTitle = new Text("Search folder:");
-        sceneTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
-
-        Button startBtn = new Button();
-        startBtn.setText("OK");
-        startBtn.setPrefWidth(100);
-
-        Button addBtn = new Button();
-        addBtn.setText("+");
-
-        Button[] start_addBtns = prepareActionListener(startBtn, addBtn, primaryStage);
-
-        start_addGrid.add(start_addBtns[0], 0, 0);
-        start_addGrid.add(start_addBtns[1], 1, 0);
-        outerGrid.add(sceneTitle, 0, 0);
-        outerGrid.add(start_addGrid, 0, 2);
-        addSelector(primaryStage);
-
-        Scene scene = new Scene(outerGrid, 900, 400);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -77,13 +47,14 @@ public class SelectorUI extends Application {
      * Adds Selector pair of textField and button for the user
      * @param stage Stage to help building the selector
      */
-    private void addSelector(Stage stage){
-        Selector selector = new Selector(stage);
+    private void addSelector(Stage stage, GridPane innerGrid, GridPane outerGrid){
+        Selector selector = new Selector(stage, innerGrid);
 
         int rowCount = getRowCount(innerGrid);
 
         innerGrid.add(selector.getField(), 0, rowCount);
-        innerGrid.add(selector.getButton(), 1, rowCount);
+        innerGrid.add(selector.getSelectButton(), 1, rowCount);
+        innerGrid.add(selector.getRemoveButton(), 2, rowCount);
 
         outerGrid.getChildren().remove(innerGrid);
         outerGrid.add(innerGrid, 0, 1, 2, 1);
@@ -93,7 +64,7 @@ public class SelectorUI extends Application {
      * @param grid GridPane to be analyzed
      * @return row count of grid
      */
-    private int getRowCount(GridPane grid) {
+    private static int getRowCount(GridPane grid) {
         int numRows = grid.getRowConstraints().size();
         for (int i = 0; i < grid.getChildren().size(); i++) {
             Node child = grid.getChildren().get(i);
@@ -108,10 +79,10 @@ public class SelectorUI extends Application {
     }
 
     /**
-     * @param grid Gridpane containing textFields
+     * @param grid GridPane containing textFields
      * @return Array with textFields found in grid
      */
-    private TextField[] getAllTextFields(GridPane grid) {
+    private static TextField[] getAllTextFields(GridPane grid) {
         TextField[] fields = new TextField[getRowCount(grid)];
         ObservableList<Node> children = grid.getChildren();
         for (Node node : children) {
@@ -122,41 +93,84 @@ public class SelectorUI extends Application {
         return fields;
     }
 
-    /**
-     * Puts Action Listener on start and add button
-     *
-     * @param startBtn button to start manager
-     * @param addBtn button to add directions
-     * @param primaryStage Stage of this window
-     * @return Array with buttons that have action listeners
-     */
-    private Button[] prepareActionListener(Button startBtn, Button addBtn, final Stage primaryStage){
-        addBtn.setOnAction(event -> addSelector(primaryStage));
+    private void requestStartEditing(final Stage primaryStage, GridPane innerGrid){
 
-        startBtn.setOnAction(event -> {
+        ArrayList<Path> paths = new ArrayList<>();
+        for (TextField field : getAllTextFields(innerGrid)) paths.add(Paths.get(field.getText()));
+        removeDuplicates(paths);
+        if (areValid(paths)){
+            new ConfigManager(paths, primaryStage);
+        }
+    }
 
-            //Check if every textField holds a valid existing path
-            ArrayList<Path> finalDirections = new ArrayList<>();
-            for (TextField field : getAllTextFields(innerGrid)) finalDirections.add(Paths.get(field.getText()));
-            for (Path path : finalDirections){
-                if (Files.notExists(path)){
-                    EditorUI.showAlert("Error", null, "The directory \"" + path.toString() + "\" does not exist!", Alert.AlertType.ERROR);
-                    return;
-                }
+    private boolean areValid(ArrayList<Path> paths){
+        for (Path path : paths){
+            boolean noDir = path.toString().equals(Value.noDirectoryLabel);
+            if (noDir) continue;
+            if (Files.notExists(path)){
+                String text = Value.InvalidDirectory(path.toString());
+                EditorUI.showAlert("Error", null, text, Alert.AlertType.ERROR);
+                return false;
             }
+        }
+        paths.remove(Paths.get(Value.noDirectoryLabel));
+        if (paths.size() == 0){
+            EditorUI.showAlert("Error", null, Value.noDirectoryError, Alert.AlertType.ERROR);
+            return false;
+        }
+        return true;
+    }
 
-            //Start ConfigManager and continue if he has finished reading the files
-            ConfigManager manager = new ConfigManager(finalDirections);
-            if (manager.isReady()){
+    private void removeDuplicates(ArrayList<Path> list){
+        LinkedHashSet<Path> setItems = new LinkedHashSet<>(list);
+        list.clear();
+        list.addAll(setItems);
+    }
 
-                //Hide selector window
-                primaryStage.hide();
+    private GridPane initializeGrid(final Stage primaryStage){
 
-                //Open editor window
-                new EditorUI(manager, primaryStage);
-            }
-        });
+        GridPane outerGrid = new GridPane(),
+                innerGrid = new GridPane(),
+                start_addGrid = new GridPane();
 
-        return new Button[]{startBtn, addBtn};
+        Text sceneTitle = new Text();
+
+        Button startBtn = new Button(),
+                addBtn = new Button();
+
+        styleSetup(innerGrid, outerGrid, start_addGrid, sceneTitle, startBtn, addBtn);
+
+        startBtn.setOnAction(event -> requestStartEditing(primaryStage, innerGrid));
+        addBtn.setOnAction(event -> addSelector(primaryStage, innerGrid, outerGrid));
+
+        start_addGrid.add(startBtn, 0, 0);
+        start_addGrid.add(addBtn, 1, 0);
+        outerGrid.add(sceneTitle, 0, 0);
+        outerGrid.add(start_addGrid, 0, 2);
+        addSelector(primaryStage, innerGrid, outerGrid);
+
+        return outerGrid;
+    }
+
+    private void styleSetup(GridPane innerGrid, GridPane outerGrid, GridPane start_addGrid, Text sceneTitle, Button startBtn, Button addBtn) {
+        outerGrid.setAlignment(Pos.CENTER);
+        outerGrid.setHgap(10);
+        outerGrid.setVgap(5);
+        outerGrid.setPadding(new Insets(25, 25, 25, 25));
+
+        innerGrid.setAlignment(Pos.CENTER);
+        innerGrid.setHgap(10);
+        innerGrid.setVgap(5);
+
+        start_addGrid.setAlignment(Pos.CENTER);
+        start_addGrid.setHgap(5);
+
+        sceneTitle.setText(Value.sceneTitle);
+        sceneTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
+
+        startBtn.setText(Value.startBtn);
+        startBtn.setPrefWidth(100);
+
+        addBtn.setText(Value.addBtn);
     }
 }

@@ -1,11 +1,11 @@
 package com.youos.hoconeditor;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
-import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.*;
 import com.youos.hoconeditor.editor.EditorUI;
+import com.youos.hoconeditor.selector.Value;
 import javafx.scene.control.Alert;
+import javafx.stage.Stage;
+import sun.awt.SunHints;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -28,33 +28,27 @@ import java.util.Objects;
 
 public class ConfigManager {
 
-    private ArrayList<Config> configs = new ArrayList<>();
-
     private Config applicationConfig;
     private Config fullConfig;
 
-    private String applicationFile;
+    private String applicationFilePath;
 
-    private boolean ready = false;
+    private boolean ready;
 
-    /**
-     * Starts building Config variables
-     * @param directions ArrayList containing every direction for .conf files filled by the user
-     */
-    public ConfigManager(ArrayList<Path> directions){
-        for (Path path : directions) buildConfigs(path);
-        createFinal();
+    public Config getFullConfig(){
+        return fullConfig;
     }
 
-    public Config getFullConfig(){return fullConfig.resolve();}
-
-    public Config getApplicationConfig(){return applicationConfig.resolve();}
+    public Config getApplicationConfig(){
+        return applicationConfig;
+    }
 
     public void setFullConfig(Config config){
-        fullConfig = config.resolve();
+        fullConfig = config;
     }
+
     public void setApplicationConfig(Config config){
-        applicationConfig = config.resolve();
+        applicationConfig = config;
     }
 
     public boolean isReady(){
@@ -63,37 +57,75 @@ public class ConfigManager {
 
 
     /**
+     * Starts building Config variables
+     * @param paths ArrayList containing every direction for .conf files filled by the user
+     */
+    public ConfigManager(ArrayList<Path> paths, Stage primaryStage){
+        if (checkApplicationCount(paths)){
+            ArrayList<Config> configs = new ArrayList<>();
+            buildConfigs(paths, configs);
+            if (createFinal(configs)){
+                startEdit(primaryStage);
+            }
+        }
+    }
+
+    private boolean checkApplicationCount(ArrayList<Path> paths){
+
+        int applications = getApplicationCount(paths);
+
+        if (applications != 1){
+            String text = Value.ApplicationCountError(applications);
+            EditorUI.showAlert("Information", null, text, Alert.AlertType.INFORMATION);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Creates Config objects from parsing every application.conf and reference.conf found in the folder
      * and adds them to global ArrayList
-     * @param dir direction for folder containing .conf and .jar files
+     * @param paths direction for folder containing .conf and .jar files
      */
-    private void buildConfigs(Path dir){
+    private void buildConfigs(ArrayList<Path> paths, ArrayList<Config> configs){
 
-        //Iterate through folder
-        for (File file : Objects.requireNonNull(new File(dir.toString()).listFiles())) {
+        for (Path path : paths){
 
-            //Get file extension
-            String ext = getExtension(file);
+            //Iterate through folder
+            File[] folder = Objects.requireNonNull(new File(path.toString()).listFiles());
+            for (File file : folder) {
 
-            //.jar -->
-            if (ext.equals("jar")) configs.add(parseJar(file));
+                //Get file extension
+                String extension = getExtension(file);
 
-            //.conf -->
-            else{
-                try {
-                    if (file.getName().equals("application.conf") || file.getName().equals("reference.conf")){
-                        configs.add(ConfigFactory.parseFile(file));
-                    }
-                } catch (ConfigException | NullPointerException ignored){}
+                //.jar -->
+                if (extension.equals("jar")){
+                    configs.add(parseJar(file));
+                }
+
+                //.conf -->
+                if (extension.equals("conf")){
+                    try {
+                        if (file.getName().equals("application.conf") || file.getName().equals("reference.conf")){
+                            configs.add(ConfigFactory.parseFile(file));
+                        }
+                    } catch (ConfigException | NullPointerException ignored){}
+                }
             }
-
         }
+
 
         //Remove all configs that have no usable value (happens if jar parsing fails)
         configs.removeAll(Collections.singleton(null));
-        for(int i = 0; i < configs.size(); i++){
-            if (configs.get(i).isEmpty()) configs.remove(configs.get(i));
-        }
+    }
+
+    private void startEdit(Stage primaryStage){
+        //Hide selector window
+        primaryStage.hide();
+
+        //Open editor window
+        new EditorUI(this, primaryStage);
     }
 
     /**
@@ -116,47 +148,39 @@ public class ConfigManager {
      *
      * Creates global variables applicationConfig, applicationFile and fullConfig
      */
-    private void createFinal(){
+    private boolean createFinal(ArrayList<Config> configs){
 
         //Move application.conf to the end of the list
         configs.sort(new ConfigComparison());
 
-        //If there are 2 or more configs with origin: application.conf --> showAlert and return
-        if (getApplicationCount() > 1){
-            EditorUI.showAlert("Information", null, "There are " + getApplicationCount() + " application.conf files " +
-                    "in your selected folders. Please ensure that there is only one application.conf!", Alert.AlertType.INFORMATION);
-            ready = false;
-            return;
-        }
-
         //Copy applicationConfig and applicationFile into variables
-        applicationConfig = configs.get(configs.size() - 1).resolve();
-        applicationFile = applicationConfig.origin().filename();
+        applicationConfig = configs.get(configs.size() - 1);
+        applicationFilePath = applicationConfig.origin().filename();
 
-        //Start merging (needs starting point)
+        //Start merging all configs (needs starting point)
         Config finalConfig = configs.get(0);
         for (Config conf : configs) {
+            int index = configs.indexOf(conf);
 
             //Merging with fallback, so that the index higher config "wins"
-            try{finalConfig = configs.get(configs.indexOf(conf) + 1).resolve().withFallback(finalConfig);}
-            catch(java.lang.IndexOutOfBoundsException ignored){}
+            finalConfig = index + 1 < configs.size() ? configs.get(index + 1).withFallback(finalConfig) : finalConfig;
 
+            /*try{ finalConfig.resolve(); }
             //Error means unresolvable configuration, so there is an error with resolving a value
             catch(ConfigException e){
-                Config config = configs.get(configs.indexOf(conf) + 1);
-                EditorUI.showAlert("Error", null, "Your file " + config.origin().filename() + " has substitution problems!", Alert.AlertType.ERROR);
-                ready = false;
-                return;
-            }
+                String file = configs.get(configs.indexOf(conf) + 1).origin().filename();
+                String text = Value.SubstitutionError(file);
+                EditorUI.showAlert("Error", null, text, Alert.AlertType.ERROR);
+                return false;
+            }*/
         }
 
         //Resolve final configuration to global fullConfig
         fullConfig = finalConfig.resolve();
-        ready = true;
+        return true;
     }
 
     class ConfigComparison implements Comparator<Config> {
-
         /**
          * Sorts a List so that Configs with origin application.conf move to the end
          * @param c1 Config with index one lower than c2
@@ -173,37 +197,16 @@ public class ConfigManager {
         }
     }
 
+    private int getApplicationCount(ArrayList<Path> paths){
+        int applications = 0;
 
-    /**
-     *
-     * @param file represents a File object with file path
-     * @return only extension of filename (for example "conf")
-     */
-    private String getExtension(File file){
-
-        String extension = "";
-        int i = file.getName().lastIndexOf(".");
-        if (i > 0) {
-            extension = file.getName().substring(i + 1);
+        for (Path path : paths){
+            for (File file : Objects.requireNonNull(new File(path.toString()).listFiles())) {
+                if (file.getName().equals("application.conf")) applications++;
+            }
         }
-        return extension;
-    }
 
-
-    /**
-     *
-     * @return current count of configs with origin: application.conf
-     */
-    public int getApplicationCount(){
-
-        int count = 0;
-        for (Config c : configs){
-            try{
-                if (new File(c.origin().filename()).getName().equals("application.conf")) count++;
-            } catch (NullPointerException ignored){}
-
-        }
-        return count;
+        return applications;
     }
 
     /**
@@ -222,15 +225,15 @@ public class ConfigManager {
         //Prepare writer
         PrintWriter writer = null;
         try {
-            writer = new PrintWriter(applicationFile, "UTF-8");
-        } catch (FileNotFoundException | UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+            writer = new PrintWriter(applicationFilePath, "UTF-8");
+        } catch (FileNotFoundException | UnsupportedEncodingException ignored) {}
 
         //Write content to file and close it
         Objects.requireNonNull(writer).print(newConfRendered);
         Objects.requireNonNull(writer).close();
     }
+
+
 
     /**
      *
@@ -241,12 +244,33 @@ public class ConfigManager {
     public static String rawFileString(String fileDescription, boolean keepEdited){
 
         int startIndex = 0;
+
         if (!keepEdited){
             String edited = "(Edited) ";
             startIndex = fileDescription.indexOf(edited);
             startIndex = startIndex == -1 ? 0 : startIndex + edited.length();
         }
+
         int endIndex = fileDescription.lastIndexOf(":");
+
         return fileDescription.substring(startIndex, endIndex);
+
+    }
+
+
+
+    /**
+     *
+     * @param file represents a File object with file path
+     * @return only extension of filename (for example "conf")
+     */
+    private static String getExtension(File file){
+
+        String extension = "";
+        int i = file.getName().lastIndexOf(".");
+        if (i > 0) {
+            extension = file.getName().substring(i + 1);
+        }
+        return extension;
     }
 }

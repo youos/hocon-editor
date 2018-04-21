@@ -50,7 +50,6 @@ class Editor {
     Editor(){}
 
     void setup(TreeItem<String> item, Config config){
-        config = config.resolve();
         this.item = item;
 
         //Build path string separated by dots
@@ -60,11 +59,13 @@ class Editor {
             path.insert(0, editItem.getValue() + dot);
         }
 
+
         editPath = path.toString();
-        editFile = ConfigManager.rawFileString(config.getValue(editPath).origin().description(), true);
+        ConfigValue value = config.getValue(editPath);
+        editFile = ConfigManager.rawFileString(value.origin().description(), true);
+
 
         if (item.isLeaf()){
-            ConfigValue value = config.getValue(path.toString());
             List<String> comments = value.origin().comments();
             editValue = value.render(renderOptions);
             editType = value.valueType().name();
