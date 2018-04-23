@@ -1,6 +1,7 @@
 package com.youos.hoconeditor.selector;
 
 import com.youos.hoconeditor.ConfigManager;
+import com.youos.hoconeditor.Value;
 import com.youos.hoconeditor.editor.EditorUI;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
@@ -33,7 +34,7 @@ public class SelectorUI extends Application {
      */
     @Override
     public void start(final Stage primaryStage) {
-        primaryStage.setTitle("HOCON Viewer");
+        primaryStage.setTitle(Value.WindowTitle);
 
         GridPane mainGrid = initializeGrid(primaryStage);
 
@@ -50,7 +51,7 @@ public class SelectorUI extends Application {
     private void addSelector(Stage stage, GridPane innerGrid, GridPane outerGrid){
         Selector selector = new Selector(stage, innerGrid);
 
-        int rowCount = getRowCount(innerGrid);
+        int rowCount = GetRowCount(innerGrid);
 
         innerGrid.add(selector.getField(), 0, rowCount);
         innerGrid.add(selector.getSelectButton(), 1, rowCount);
@@ -58,13 +59,25 @@ public class SelectorUI extends Application {
 
         outerGrid.getChildren().remove(innerGrid);
         outerGrid.add(innerGrid, 0, 1, 2, 1);
+
+        CheckAddRemove(innerGrid);
+    }
+
+    static void CheckAddRemove(GridPane grid){
+        if (SelectorUI.GetRowCount(grid) == 1){
+            grid.getChildren().get(2).setDisable(true);
+        } else {
+            for (Node child : grid.getChildren()) {
+                if (GridPane.getColumnIndex(child) == 2) child.setDisable(false);
+            }
+        }
     }
 
     /**
      * @param grid GridPane to be analyzed
      * @return row count of grid
      */
-    private static int getRowCount(GridPane grid) {
+    private static int GetRowCount(GridPane grid) {
         int numRows = grid.getRowConstraints().size();
         for (int i = 0; i < grid.getChildren().size(); i++) {
             Node child = grid.getChildren().get(i);
@@ -83,7 +96,7 @@ public class SelectorUI extends Application {
      * @return Array with textFields found in grid
      */
     private static TextField[] getAllTextFields(GridPane grid) {
-        TextField[] fields = new TextField[getRowCount(grid)];
+        TextField[] fields = new TextField[GetRowCount(grid)];
         ObservableList<Node> children = grid.getChildren();
         for (Node node : children) {
             if(GridPane.getColumnIndex(node) == 0) {
@@ -105,7 +118,7 @@ public class SelectorUI extends Application {
 
     private boolean areValid(ArrayList<Path> paths){
         for (Path path : paths){
-            boolean noDir = path.toString().equals(Value.noDirectoryLabel);
+            boolean noDir = path.toString().equals(Value.NoDirectoryLabel);
             if (noDir) continue;
             if (Files.notExists(path)){
                 String text = Value.InvalidDirectory(path.toString());
@@ -113,9 +126,9 @@ public class SelectorUI extends Application {
                 return false;
             }
         }
-        paths.remove(Paths.get(Value.noDirectoryLabel));
+        paths.remove(Paths.get(Value.NoDirectoryLabel));
         if (paths.size() == 0){
-            EditorUI.showAlert("Error", null, Value.noDirectoryError, Alert.AlertType.ERROR);
+            EditorUI.showAlert("Error", null, Value.NoDirectoryError, Alert.AlertType.ERROR);
             return false;
         }
         return true;
@@ -165,12 +178,12 @@ public class SelectorUI extends Application {
         start_addGrid.setAlignment(Pos.CENTER);
         start_addGrid.setHgap(5);
 
-        sceneTitle.setText(Value.sceneTitle);
+        sceneTitle.setText(Value.SceneTitle);
         sceneTitle.setFont(Font.font("Tahoma", FontWeight.NORMAL, 20));
 
-        startBtn.setText(Value.startBtn);
+        startBtn.setText(Value.StartBtn);
         startBtn.setPrefWidth(100);
 
-        addBtn.setText(Value.addBtn);
+        addBtn.setText(Value.AddBtn);
     }
 }

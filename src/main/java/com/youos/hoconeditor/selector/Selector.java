@@ -1,5 +1,6 @@
 package com.youos.hoconeditor.selector;
 
+import com.youos.hoconeditor.Value;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -26,20 +27,20 @@ class Selector {
 
     Selector(final Stage stage, GridPane innerGrid){
         field.setPrefWidth(800);
-        field.setText(Value.noDirectoryLabel);
+        field.setText(Value.NoDirectoryLabel);
 
         selectButton.setPrefWidth(100);
-        selectButton.setText("Select");
+        selectButton.setText(Value.SelectBtn);
         selectButton.setOnAction(event -> directoryChooser(stage));
 
-        removeButton.setText("-");
+        removeButton.setText(Value.RemoveBtn);
         removeButton.setOnAction(event -> removeSelector(innerGrid));
     }
 
     private void directoryChooser(final Stage stage){
         DirectoryChooser directoryChooser = new DirectoryChooser();
         File selectedDirectory = directoryChooser.showDialog(stage);
-        String text = selectedDirectory == null ? Value.noDirectoryLabel : selectedDirectory.getAbsolutePath();
+        String text = selectedDirectory == null ? Value.NoDirectoryLabel : selectedDirectory.getAbsolutePath();
         field.setText(text);
     }
 
@@ -59,6 +60,7 @@ class Selector {
             else if (r == row) deleteNodes.add(child);
         }
         grid.getChildren().removeAll(deleteNodes);
+        SelectorUI.CheckAddRemove(grid);
     }
 
     Button getRemoveButton(){ return removeButton; }

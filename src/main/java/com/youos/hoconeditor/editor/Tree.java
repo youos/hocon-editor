@@ -9,7 +9,7 @@ import javafx.scene.control.TreeView;
 
 import java.util.Map;
 
-public class Tree {
+class Tree {
 
     private TreeView<String> tree;
 
@@ -60,7 +60,7 @@ public class Tree {
     }
 
 
-    public TreeView<String> getTreeView(){
+    TreeView<String> getTreeView(){
         return tree;
     }
 

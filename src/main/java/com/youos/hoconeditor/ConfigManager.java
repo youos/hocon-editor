@@ -2,22 +2,15 @@ package com.youos.hoconeditor;
 
 import com.typesafe.config.*;
 import com.youos.hoconeditor.editor.EditorUI;
-import com.youos.hoconeditor.selector.Value;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
-import sun.awt.SunHints;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Objects;
+import java.util.*;
+import java.util.jar.*;
+import java.util.jar.JarFile;
 
 /**
  * Class ConfigManager:
@@ -33,8 +26,6 @@ public class ConfigManager {
 
     private String applicationFilePath;
 
-    private boolean ready;
-
     public Config getFullConfig(){
         return fullConfig;
     }
@@ -49,10 +40,6 @@ public class ConfigManager {
 
     public void setApplicationConfig(Config config){
         applicationConfig = config;
-    }
-
-    public boolean isReady(){
-        return ready;
     }
 
 
@@ -95,29 +82,39 @@ public class ConfigManager {
             //Iterate through folder
             File[] folder = Objects.requireNonNull(new File(path.toString()).listFiles());
             for (File file : folder) {
-
-                //Get file extension
-                String extension = getExtension(file);
-
-                //.jar -->
-                if (extension.equals("jar")){
-                    configs.add(parseJar(file));
-                }
-
-                //.conf -->
-                if (extension.equals("conf")){
-                    try {
-                        if (file.getName().equals("application.conf") || file.getName().equals("reference.conf")){
-                            configs.add(ConfigFactory.parseFile(file));
-                        }
-                    } catch (ConfigException | NullPointerException ignored){}
-                }
+                readFile(file, configs);
             }
         }
 
 
         //Remove all configs that have no usable value (happens if jar parsing fails)
         configs.removeAll(Collections.singleton(null));
+    }
+
+    private void readFile(File file, ArrayList<Config> configs){
+        if (file.isDirectory()){
+            File[] folder = Objects.requireNonNull(file.listFiles());
+            for (File f : folder){
+                readFile(f, configs);
+            }
+        }
+
+        if (file.isFile()){
+            //Get file extension
+            String extension = Extension(file);
+
+            //.jar -->
+            if (extension.equals("jar")){
+                configs.addAll(Objects.requireNonNull(parseJar(file)));
+            }
+
+            //.conf -->
+            if (extension.equals("conf")){
+                try {
+                    configs.add(ConfigFactory.parseFile(file));
+                } catch (ConfigException | NullPointerException ignored){}
+            }
+        }
     }
 
     private void startEdit(Stage primaryStage){
@@ -133,11 +130,20 @@ public class ConfigManager {
      * @param jarFile File containing full path to .jar file
      * @return Config from reference.conf in jar
      */
-    private Config parseJar(File jarFile) {
+    private ArrayList<Config> parseJar(File jarFile) {
         try {
-            URL url = new URL("jar:file:" + jarFile.getAbsolutePath() + "!/reference.conf");
-            return ConfigFactory.parseURL(url);
-        } catch (MalformedURLException ignored) {
+            ArrayList<Config> allConfigs = new ArrayList<>();
+            JarFile jar = new JarFile(jarFile.getAbsolutePath());
+            Enumeration entries = jar.entries();
+            while(entries.hasMoreElements()){
+                JarEntry entry = (JarEntry)entries.nextElement();
+                if (entry.getName().endsWith(".conf")){
+                    URL url = new URL("jar:file:" + jarFile.getAbsolutePath() + "!/" + entry.getName());
+                    allConfigs.add(ConfigFactory.parseURL(url));
+                }
+            }
+            return allConfigs;
+        } catch (IOException e) {
             return null;
         }
     }
@@ -158,25 +164,18 @@ public class ConfigManager {
         applicationFilePath = applicationConfig.origin().filename();
 
         //Start merging all configs (needs starting point)
-        Config finalConfig = configs.get(0);
+        Config build = configs.get(0);
         for (Config conf : configs) {
             int index = configs.indexOf(conf);
 
             //Merging with fallback, so that the index higher config "wins"
-            finalConfig = index + 1 < configs.size() ? configs.get(index + 1).withFallback(finalConfig) : finalConfig;
-
-            /*try{ finalConfig.resolve(); }
-            //Error means unresolvable configuration, so there is an error with resolving a value
-            catch(ConfigException e){
-                String file = configs.get(configs.indexOf(conf) + 1).origin().filename();
-                String text = Value.SubstitutionError(file);
-                EditorUI.showAlert("Error", null, text, Alert.AlertType.ERROR);
-                return false;
-            }*/
+            build = index + 1 < configs.size() ? configs.get(index + 1).withFallback(build) : build;
         }
 
         //Resolve final configuration to global fullConfig
-        fullConfig = finalConfig.resolve();
+        if (resolveNotFailed(build)){
+            fullConfig = build.resolve();
+        } else return false;
         return true;
     }
 
@@ -233,22 +232,32 @@ public class ConfigManager {
         Objects.requireNonNull(writer).close();
     }
 
+    private boolean resolveNotFailed(Config config){
+        try{
+            config.resolve();
+            return true;
+        } catch(ConfigException e){
+            String text = e.getMessage();
+            EditorUI.showAlert("Error", null, text, Alert.AlertType.ERROR);
+        }
+        return false;
+    }
+
 
 
     /**
      *
      * @param fileDescription String to be analyzed
-     * @param keepEdited boolean decides whether "(Edited) " phrase should be kept in or not
+     * @param keepEdited boolean decides whether edited phrase should be kept in or not
      * @return filepath without line number and maybe without edited phrase
      */
-    public static String rawFileString(String fileDescription, boolean keepEdited){
+    public static String RawFileString(String fileDescription, boolean keepEdited){
 
         int startIndex = 0;
 
         if (!keepEdited){
-            String edited = "(Edited) ";
-            startIndex = fileDescription.indexOf(edited);
-            startIndex = startIndex == -1 ? 0 : startIndex + edited.length();
+            startIndex = fileDescription.indexOf(Value.Edited);
+            startIndex = startIndex == -1 ? 0 : startIndex + Value.Edited.length();
         }
 
         int endIndex = fileDescription.lastIndexOf(":");
@@ -264,7 +273,7 @@ public class ConfigManager {
      * @param file represents a File object with file path
      * @return only extension of filename (for example "conf")
      */
-    private static String getExtension(File file){
+    private static String Extension(File file){
 
         String extension = "";
         int i = file.getName().lastIndexOf(".");

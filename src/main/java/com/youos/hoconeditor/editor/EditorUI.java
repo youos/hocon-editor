@@ -2,6 +2,7 @@ package com.youos.hoconeditor.editor;
 
 import com.typesafe.config.Config;
 import com.youos.hoconeditor.ConfigManager;
+import com.youos.hoconeditor.Value;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -31,8 +32,6 @@ import java.util.Optional;
 
 public class EditorUI {
 
-
-
     private Stage selectorStage;
     private Stage mainStage;
 
@@ -42,10 +41,8 @@ public class EditorUI {
     private Text typeField = new Text();
     private TextArea valueField = new TextArea();
 
-    private Button editBtn = new Button("Edit");
-    private Button openBtn = new Button("Open New Directory");
-    private Button saveBtn = new Button("Apply Changes");
-    private Button deleteBtn = new Button("Delete Entry");
+    private Button editBtn = new Button(Value.EditBtn);
+    private Button deleteBtn = new Button(Value.DeleteBtn);
 
     private ConfigManager configManager;
     private Editor editor;
@@ -70,11 +67,11 @@ public class EditorUI {
         editBtn.setPrefSize(70, 40);
         deleteBtn.setDisable(true);
 
-        Label pathLabel = new Label("Path : ");
-        Label valueLabel = new Label("Value : ");
-        Label typeLabel = new Label("Type : ");
-        Label fileLabel = new Label("File : ");
-        Label commentLabel = new Label("Comment : ");
+        Label pathLabel = new Label(Value.PathLabel);
+        Label valueLabel = new Label(Value.ValueLabel);
+        Label typeLabel = new Label(Value.TypeLabel);
+        Label fileLabel = new Label(Value.FileLabel);
+        Label commentLabel = new Label(Value.CommentLabel);
 
         //Add elements to a grid for ordered view
         GridPane editPane = new GridPane();
@@ -94,13 +91,18 @@ public class EditorUI {
         editPane.add(valueField, 1, 4);
         editPane.add(editBtn, 2, 4);
 
-        //Action listener
-        prepareEvents();
+        //Action events for toolbar and edit buttons
+        editBtn.setOnAction(event -> editEntry());
+        Button openBtn = new Button(Value.OpenBtn);
+        openBtn.setOnAction(event -> selectNewFolders());
+        Button saveBtn = new Button(Value.SaveBtn);
+        saveBtn.setOnAction(event -> configManager.saveDataToFile());
+        deleteBtn.setOnAction(event -> requestDelete());
 
         /*Basic view:
          * Content A: Toolbar
          * Content B: Tree -- Editor
-         * Split Contents vertically
+         * Split Contents horizontally, ContentB vertically
          */
         ToolBar toolBar = new ToolBar(openBtn, saveBtn, deleteBtn);
         toolBar.setPrefWidth(900);
@@ -153,27 +155,6 @@ public class EditorUI {
 
     }
 
-    private void prepareEvents(){
-
-        //Action events for toolbar and edit buttons
-        editBtn.setOnAction(event -> editEntry());
-        openBtn.setOnAction(event -> selectNewFolders());
-        saveBtn.setOnAction(event -> configManager.saveDataToFile());
-        deleteBtn.setOnAction(event -> {
-
-            //Confirm before continue removing the element
-            if (showAlert("Confirm", "Are you sure you want to remove this entry?",
-                    "Key to be removed: \n" + editor.getPath(), Alert.AlertType.CONFIRMATION)) {
-
-                //Remove item in Backend (both config variables)
-                editor.deleteSelectedEntry(configManager);
-
-                //Remove item in Frontend (visual TreeView)
-                tree.remove(editor.getItem());
-            }
-        });
-    }
-
     private void editEntry(){
 
         //Rebuild Backend
@@ -181,6 +162,20 @@ public class EditorUI {
 
         //Rebuild Frontend
         changeEditingEntry(editor.getItem(), configManager.getFullConfig());
+    }
+
+    private void requestDelete(){
+
+        //Confirm before continue removing the element
+        if (showAlert("Confirmation", Value.DeleteConfirmation,
+                Value.DeleteConfirmation(editor.getPath()), Alert.AlertType.CONFIRMATION)) {
+
+            //Remove item in Backend (both config variables)
+            editor.deleteSelectedEntry(configManager);
+
+            //Remove item in Frontend (visual TreeView)
+            tree.remove(editor.getItem());
+        }
     }
 
 
@@ -193,7 +188,7 @@ public class EditorUI {
         alert.setHeaderText(header);
         alert.setContentText(content);
         Optional<ButtonType> result = alert.showAndWait();
-        return result.get() == ButtonType.OK;
+        return !result.isPresent() || result.get() == ButtonType.OK;
     }
 
 }

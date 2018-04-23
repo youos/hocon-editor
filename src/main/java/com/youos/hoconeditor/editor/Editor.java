@@ -2,6 +2,7 @@ package com.youos.hoconeditor.editor;
 
 import com.typesafe.config.*;
 import com.youos.hoconeditor.ConfigManager;
+import com.youos.hoconeditor.Value;
 import javafx.scene.control.TreeItem;
 
 import java.util.List;
@@ -12,7 +13,7 @@ class Editor {
 
     private TreeItem<String> item;
 
-    public TreeItem<String> getItem() {
+    TreeItem<String> getItem() {
         return item;
     }
 
@@ -23,27 +24,27 @@ class Editor {
     private String editValue;
     private Boolean editDisable;
 
-    public Boolean getBtnDisabled() {
+    Boolean getBtnDisabled() {
         return editDisable;
     }
 
-    public String getFile() {
+    String getFile() {
         return editFile;
     }
 
-    public String getPath() {
+    String getPath() {
         return editPath;
     }
 
-    public String getComment() {
+    String getComment() {
         return editComment;
     }
 
-    public String getType() {
+    String getType() {
         return editType;
     }
 
-    public String getValue() {
+    String getValue() {
         return editValue;
     }
 
@@ -62,7 +63,7 @@ class Editor {
 
         editPath = path.toString();
         ConfigValue value = config.getValue(editPath);
-        editFile = ConfigManager.rawFileString(value.origin().description(), true);
+        editFile = ConfigManager.RawFileString(value.origin().description(), true);
 
 
         if (item.isLeaf()){
@@ -85,7 +86,7 @@ class Editor {
         String configString =  commentString + editPath + "=" + value;
 
         //Determine if fileField needs "(edited)" phrase
-        String edited = "(Edited) ";
+        String edited = Value.Edited;
         String oldValue = manager.getFullConfig().getValue(editPath).render(renderOptions);
         List<String> oldComments = manager.getFullConfig().getValue(editPath).origin().comments();
         String oldComment = oldComments.size() > 0 ? oldComments.get(0) : "";
