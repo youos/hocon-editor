@@ -44,6 +44,12 @@ class Tree {
         }
     }
 
+    public void rebuild(Config config){
+        TreeItem<String> root = tree.getRoot();
+        root.getChildren().remove(0, root.getChildren().size());
+        build(config, root);
+    }
+
     void remove(TreeItem<String> treeItem){
         checkTree(treeItem, tree.getRoot());
     }

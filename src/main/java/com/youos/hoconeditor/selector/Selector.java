@@ -28,7 +28,6 @@ class Selector {
     Selector(final Stage stage, GridPane innerGrid){
         field.setPrefWidth(800);
         field.setText(Value.NoDirectoryLabel);
-        field.setText("C:\\Users\\Growthteam\\Documents\\IdeaProjects\\hocontool\\src\\main\\resources");
 
         selectButton.setPrefWidth(100);
         selectButton.setText(Value.SelectBtn);

@@ -1,6 +1,8 @@
 package com.youos.hoconeditor.editor;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueFactory;
 import com.youos.hoconeditor.ConfigManager;
 import com.youos.hoconeditor.Value;
 import javafx.geometry.HPos;
@@ -14,6 +16,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -45,6 +49,7 @@ public class EditorUI {
 
     private Button editBtn = new Button(Value.EditBtn);
     private Button deleteBtn = new Button(Value.DeleteBtn);
+    private Button renameBtn = new Button(Value.RenameBtn);
 
     private ConfigManager configManager;
     private Editor editor;
@@ -69,6 +74,7 @@ public class EditorUI {
         editBtn.setDisable(true);
         editBtn.setPrefSize(70, 40);
         deleteBtn.setDisable(true);
+        renameBtn.setDisable(true);
 
         Label fileLabel = new Label(Value.FileLabel);
         Label pathLabel = new Label(Value.PathLabel);
@@ -105,13 +111,16 @@ public class EditorUI {
         Button saveBtn = new Button(Value.SaveBtn);
         saveBtn.setOnAction(event -> configManager.saveDataToFile());
         deleteBtn.setOnAction(event -> requestDelete());
+        renameBtn.setOnAction(event -> requestRename());
+        Button newKeyBtn = new Button(Value.NewKeyBtn);
+        newKeyBtn.setOnAction(event -> requestNewKey());
 
         /*Basic view:
          * Content A: Toolbar
          * Content B: Tree -- Editor
          * Split Contents horizontally, ContentB vertically
          */
-        ToolBar toolBar = new ToolBar(openBtn, saveBtn, deleteBtn);
+        ToolBar toolBar = new ToolBar(openBtn, saveBtn, deleteBtn, renameBtn, newKeyBtn);
         toolBar.setPrefWidth(900);
         GridPane toolGrid = new GridPane();
         toolGrid.setMaxHeight(toolBar.getHeight());
@@ -154,6 +163,7 @@ public class EditorUI {
 
         editBtn.setDisable(btnDisabled);
         deleteBtn.setDisable(false);
+        renameBtn.setDisable(false);
     }
 
     private void selectNewFolders(){
@@ -187,15 +197,92 @@ public class EditorUI {
         }
     }
 
+    private void requestRename(){
+        TextInputDialog dialog = new TextInputDialog();
+        setTexts(dialog, Value.RenameKeyTitle, Value.RenameKeyHeader, Value.RenameKeyContent);
+        String newName = dialog.showAndWait().orElse(null);
+        if (newName == null || newName.isEmpty()) return;
+
+
+
+    }
+
+    private void requestNewKey(){
+
+        Dialog<ArrayList> dialog = new Dialog<>();
+        setTexts(dialog, "Add key", "Select a key path, a value and a value type!", "");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        //TODO Create frontend
+
+        TextInputDialog stringDialog = new TextInputDialog();
+        setTexts(stringDialog, Value.EnterKeyTitle, Value.EnterKeyHeader, Value.EnterKeyContent);
+        String key = stringDialog.showAndWait().orElse(null);
+        if (key == null) return;
+
+        List<String> types = new ArrayList<>();
+        types.add("BOOLEAN");
+        types.add("NUMBER");
+        types.add("STRING");
+        ChoiceDialog<String> typeDialog = new ChoiceDialog<>(types.get(0), types);
+        setTexts(typeDialog, Value.EnterTypeTitle, Value.EnterTypeHeader, Value.EnterTypeContent);
+        String type = typeDialog.showAndWait().orElse(null);
+        if (type == null) return;
+
+        TextInputDialog valueDialog = new TextInputDialog();
+        setTexts(valueDialog, Value.EnterValueTitle, Value.EnterValueHeader, Value.EnterValueContent);
+        String value = valueDialog.showAndWait().orElse(null);
+        if (value == null) return;
+
+        createNewKey(key, type, value);
+
+    }
+
+    private void createNewKey(String key, String type, String value){
+        Object finalValue = null;
+        try{
+            switch (type){
+                case "STRING":
+                    finalValue = value;
+                    break;
+                case "NUMBER":
+                    finalValue = Double.parseDouble(value);
+                    break;
+                case "BOOLEAN":
+                    finalValue = Boolean.parseBoolean(value);
+                    break;
+            }
+        } catch (NumberFormatException e){
+            showAlert("Error", Value.ConversionError, Value.TypeConversionError("number"), Alert.AlertType.ERROR);
+            return;
+        }
+
+        ConfigValue configValue = ConfigValueFactory.fromAnyRef(finalValue, "Added by HOCON Viewer");
+
+        //Add selected path to main configs
+        Config newFullConf = configManager.getFullConfig().withValue(key, configValue);
+        Config newApplicationConf = configManager.getApplicationConfig().withValue(key, configValue);
+
+        //Apply changes to main configs
+        configManager.setFullConfig(newFullConf);
+        configManager.setApplicationConfig(newApplicationConf);
+
+        tree.rebuild(newFullConf);
+    }
+
+    private static void setTexts(Dialog dialog, String title, String header, String content){
+        dialog.setTitle(title);
+        dialog.setHeaderText(header);
+        dialog.setContentText(content);
+    }
+
 
 
     public static boolean showAlert(String title, String header, String content, Alert.AlertType type){
 
         //Show alert for warnings, problems, errors (specified by type)
         Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(header);
-        alert.setContentText(content);
+        setTexts(alert, title, header, content);
         Optional<ButtonType> result = alert.showAndWait();
         return !result.isPresent() || result.get() == ButtonType.OK;
     }

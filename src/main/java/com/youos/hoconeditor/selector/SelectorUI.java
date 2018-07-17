@@ -24,10 +24,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 
 public class SelectorUI extends Application {
 
-    public static void main(String[] args){launch();}
+    public static void main(String[] args){
+        Locale.setDefault(Locale.ENGLISH);
+        launch();
+    }
 
     /**
      * Builds frontend of first window, the selectorStage to select directories
@@ -39,7 +43,7 @@ public class SelectorUI extends Application {
 
         GridPane mainGrid = initializeGrid(primaryStage);
 
-        Scene scene = new Scene(mainGrid, 900, 400);
+        Scene scene = new Scene(mainGrid, 1000, 500);
 
         primaryStage.setScene(scene);
         primaryStage.show();

@@ -1,9 +1,0 @@
-{
-  "number": 5,
-  "boolean": true,
-  "string": "test",
-  "objects": {
-    "one": 1,
-    "two": 2
-  }
-}

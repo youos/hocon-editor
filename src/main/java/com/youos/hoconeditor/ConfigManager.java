@@ -163,7 +163,8 @@ public class ConfigManager {
 
         //Copy applicationConfig and applicationFile into variables
         applicationConfig = configs.get(configs.size() - 1);
-        applicationFilePath = applicationConfig.origin().filename();
+        applicationFilePath = applicationConfig.origin().url().getFile();
+
 
         //Start merging all configs (needs starting point)
         Config build = configs.get(0);
@@ -259,7 +260,7 @@ public class ConfigManager {
         }
 
         int endIndex = fileDescription.lastIndexOf(":");
-
+        if (endIndex == -1) return "";
         return fileDescription.substring(startIndex, endIndex);
 
     }

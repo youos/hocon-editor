@@ -54,6 +54,7 @@ class Editor {
     Editor(){}
 
     void setup(TreeItem<String> item, Config config){
+        if (item == null) return;
         this.item = item;
 
         //Build path string separated by dots
@@ -75,7 +76,7 @@ class Editor {
             editValue = value.render(renderOptions);
             editType = value.valueType().name();
             editComment = comments.size() > 0 ? comments.get(0) : "";
-            //editEnvironment =
+            editEnvironment = "";
             editDisable = false;
         } else {
             editValue = "";
