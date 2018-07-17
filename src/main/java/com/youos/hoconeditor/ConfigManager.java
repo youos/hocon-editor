@@ -1,6 +1,9 @@
 package com.youos.hoconeditor;
 
-import com.typesafe.config.*;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigRenderOptions;
 import com.youos.hoconeditor.editor.EditorUI;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
@@ -9,7 +12,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.jar.*;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 /**
@@ -51,9 +54,8 @@ public class ConfigManager {
         if (checkApplicationCount(paths)){
             ArrayList<Config> configs = new ArrayList<>();
             buildConfigs(paths, configs);
-            if (createFinal(configs)){
-                startEdit(primaryStage);
-            }
+            createFinal(configs);
+            startEdit(primaryStage);
         }
     }
 
@@ -154,7 +156,7 @@ public class ConfigManager {
      *
      * Creates global variables applicationConfig, applicationFile and fullConfig
      */
-    private boolean createFinal(ArrayList<Config> configs){
+    private void createFinal(ArrayList<Config> configs){
 
         //Move application.conf to the end of the list
         configs.sort(new ConfigComparison());
@@ -172,11 +174,7 @@ public class ConfigManager {
             build = index + 1 < configs.size() ? configs.get(index + 1).withFallback(build) : build;
         }
 
-        //Resolve final configuration to global fullConfig
-        if (resolveNotFailed(build)){
-            fullConfig = build.resolve();
-        } else return false;
-        return true;
+        fullConfig = build;
     }
 
     class ConfigComparison implements Comparator<Config> {

@@ -14,14 +14,15 @@ public class Value {
             NoDirectoryError = "Please select a directory!",
             DeleteConfirmation = "Are you sure you want to remove this entry?",
             OpenBtn = "Open New Directory",
-            EditBtn = "Edit",
+            EditBtn = "Save",
             DeleteBtn = "Delete Entry",
             SaveBtn = "Apply Changes",
             PathLabel = "Path : ",
             ValueLabel = "Value : ",
             TypeLabel = "Type : ",
             FileLabel = "File : ",
-            CommentLabel = "Comment : ";
+            CommentLabel = "Comment : ",
+            EnvironmentLabel = "Environment variable : ";
 
     public static String InvalidDirectory(String path){
         return "The directory \"" + path + "\" does not exist!";

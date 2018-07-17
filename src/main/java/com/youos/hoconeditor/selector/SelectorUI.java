@@ -12,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -153,6 +154,10 @@ public class SelectorUI extends Application {
 
         styleSetup(innerGrid, outerGrid, start_addGrid, sceneTitle, startBtn, addBtn);
 
+        startBtn.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER)
+                requestStartEditing(primaryStage, innerGrid);
+        });
         startBtn.setOnAction(event -> requestStartEditing(primaryStage, innerGrid));
         addBtn.setOnAction(event -> addSelector(primaryStage, innerGrid, outerGrid));
 

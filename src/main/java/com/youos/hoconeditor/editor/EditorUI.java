@@ -3,6 +3,7 @@ package com.youos.hoconeditor.editor;
 import com.typesafe.config.Config;
 import com.youos.hoconeditor.ConfigManager;
 import com.youos.hoconeditor.Value;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -35,11 +36,12 @@ public class EditorUI {
     private Stage selectorStage;
     private Stage mainStage;
 
-    private TextArea fileField = new TextArea();
+    private Text fileField = new Text();
     private Text pathField = new Text();
-    private TextArea commentField = new TextArea();
     private Text typeField = new Text();
-    private TextArea valueField = new TextArea();
+    private TextArea commentField = new TextArea();
+    private TextField valueField = new TextField();
+    private TextField environmentField = new TextField();
 
     private Button editBtn = new Button(Value.EditBtn);
     private Button deleteBtn = new Button(Value.DeleteBtn);
@@ -57,24 +59,27 @@ public class EditorUI {
         this.tree = new Tree(this, configManager);
 
         //Setting properties for Frontend elements of the editor
-        fileField.setMaxSize(300, 40);
-        fileField.setEditable(false);
+        fileField.setWrappingWidth(300);
+        fileField.setFill(Color.BLACK);
         pathField.setFill(Color.RED);
-        commentField.setMaxSize(300, 40);
         typeField.setFill(Color.GREEN);
+        commentField.setMaxSize(300, 40);
         valueField.setMaxSize(300, 40);
+        environmentField.setMaxSize(300, 40);
         editBtn.setDisable(true);
         editBtn.setPrefSize(70, 40);
         deleteBtn.setDisable(true);
 
-        Label pathLabel = new Label(Value.PathLabel);
-        Label valueLabel = new Label(Value.ValueLabel);
-        Label typeLabel = new Label(Value.TypeLabel);
         Label fileLabel = new Label(Value.FileLabel);
+        Label pathLabel = new Label(Value.PathLabel);
+        Label typeLabel = new Label(Value.TypeLabel);
         Label commentLabel = new Label(Value.CommentLabel);
+        Label valueLabel = new Label(Value.ValueLabel);
+        Label environmentLabel = new Label(Value.EnvironmentLabel);
 
         //Add elements to a grid for ordered view
         GridPane editPane = new GridPane();
+        GridPane.setHalignment(editBtn, HPos.RIGHT);
         editPane.setVgap(10);
         editPane.setHgap(10);
         editPane.setAlignment(Pos.TOP_CENTER);
@@ -83,13 +88,15 @@ public class EditorUI {
         editPane.add(fileField, 1, 0);
         editPane.add(pathLabel, 0, 1);
         editPane.add(pathField, 1, 1);
-        editPane.add(commentLabel, 0, 2);
-        editPane.add(commentField, 1, 2);
-        editPane.add(typeLabel, 0, 3);
-        editPane.add(typeField, 1, 3);
+        editPane.add(typeLabel, 0, 2);
+        editPane.add(typeField, 1, 2);
+        editPane.add(commentLabel, 0, 3);
+        editPane.add(commentField, 1, 3);
         editPane.add(valueLabel, 0, 4);
         editPane.add(valueField, 1, 4);
-        editPane.add(editBtn, 2, 4);
+        editPane.add(environmentLabel, 0, 5);
+        editPane.add(environmentField, 1, 5);
+        editPane.add(editBtn, 1, 6);
 
         //Action events for toolbar and edit buttons
         editBtn.setOnAction(event -> editEntry());
@@ -134,6 +141,7 @@ public class EditorUI {
         String comment = editor.getComment();
         String type = editor.getType();
         String value = editor.getValue();
+        String environment = editor.getEnvironment();
         Boolean btnDisabled = editor.getBtnDisabled();
 
         //Set them into view
@@ -142,6 +150,7 @@ public class EditorUI {
         commentField.setText(comment);
         typeField.setText(type);
         valueField.setText(value);
+        environmentField.setText(environment);
 
         editBtn.setDisable(btnDisabled);
         deleteBtn.setDisable(false);

@@ -22,6 +22,7 @@ class Editor {
     private String editComment;
     private String editType;
     private String editValue;
+    private String editEnvironment;
     private Boolean editDisable;
 
     Boolean getBtnDisabled() {
@@ -48,6 +49,8 @@ class Editor {
         return editValue;
     }
 
+    String getEnvironment(){return editEnvironment; }
+
     Editor(){}
 
     void setup(TreeItem<String> item, Config config){
@@ -62,7 +65,8 @@ class Editor {
 
 
         editPath = path.toString();
-        ConfigValue value = config.getValue(editPath);
+        Config resolved = config.resolve();
+        ConfigValue value = resolved.getValue(editPath);
         editFile = ConfigManager.RawFileString(value.origin().description(), true);
 
 
@@ -71,11 +75,13 @@ class Editor {
             editValue = value.render(renderOptions);
             editType = value.valueType().name();
             editComment = comments.size() > 0 ? comments.get(0) : "";
+            //editEnvironment =
             editDisable = false;
         } else {
             editValue = "";
             editComment = "";
             editType = "PATH";
+            editEnvironment = "";
             editDisable = true;
         }
     }
