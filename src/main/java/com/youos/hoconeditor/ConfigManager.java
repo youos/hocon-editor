@@ -17,7 +17,7 @@ import java.util.jar.JarFile;
 
 /**
  * Class ConfigManager:
- *
+ * <p>
  * Responsible for building and managing Config data
  * Also contains some useful static functions
  */
@@ -29,29 +29,30 @@ public class ConfigManager {
 
     private String applicationFilePath;
 
-    public Config getFullConfig(){
+    public Config getFullConfig() {
         return fullConfig;
     }
 
-    public Config getApplicationConfig(){
+    public Config getApplicationConfig() {
         return applicationConfig;
     }
 
-    public void setFullConfig(Config config){
+    public void setFullConfig(Config config) {
         fullConfig = config;
     }
 
-    public void setApplicationConfig(Config config){
+    public void setApplicationConfig(Config config) {
         applicationConfig = config;
     }
 
 
     /**
      * Starts building Config variables
+     *
      * @param paths ArrayList containing every direction for .conf files filled by the user
      */
-    public ConfigManager(ArrayList<Path> paths, Stage primaryStage){
-        if (checkApplicationCount(paths)){
+    public ConfigManager(ArrayList<Path> paths, Stage primaryStage) {
+        if (checkApplicationCount(paths)) {
             ArrayList<Config> configs = new ArrayList<>();
             buildConfigs(paths, configs);
             createFinal(configs);
@@ -59,11 +60,11 @@ public class ConfigManager {
         }
     }
 
-    private boolean checkApplicationCount(ArrayList<Path> paths){
+    private boolean checkApplicationCount(ArrayList<Path> paths) {
 
         int applications = getApplicationCount(paths);
 
-        if (applications != 1){
+        if (applications != 1) {
             String text = Value.ApplicationCountError(applications);
             EditorUI.showAlert("Information", null, text, Alert.AlertType.INFORMATION);
             return false;
@@ -75,11 +76,12 @@ public class ConfigManager {
     /**
      * Creates Config objects from parsing every application.conf and reference.conf found in the folder
      * and adds them to global ArrayList
+     *
      * @param paths direction for folder containing .conf and .jar files
      */
-    private void buildConfigs(ArrayList<Path> paths, ArrayList<Config> configs){
+    private void buildConfigs(ArrayList<Path> paths, ArrayList<Config> configs) {
 
-        for (Path path : paths){
+        for (Path path : paths) {
 
             //Iterate through folder
             File[] folder = Objects.requireNonNull(new File(path.toString()).listFiles());
@@ -93,33 +95,34 @@ public class ConfigManager {
         configs.removeAll(Collections.singleton(null));
     }
 
-    private void readFile(File file, ArrayList<Config> configs){
-        if (file.isDirectory()){
+    private void readFile(File file, ArrayList<Config> configs) {
+        if (file.isDirectory()) {
             File[] folder = Objects.requireNonNull(file.listFiles());
-            for (File f : folder){
+            for (File f : folder) {
                 readFile(f, configs);
             }
         }
 
-        if (file.isFile()){
+        if (file.isFile()) {
             //Get file extension
             String extension = Extension(file);
 
             //.jar -->
-            if (extension.equals("jar")){
+            if (extension.equals("jar")) {
                 configs.addAll(Objects.requireNonNull(parseJar(file)));
             }
 
             //.conf -->
-            if (extension.equals("conf")){
+            if (extension.equals("conf")) {
                 try {
                     configs.add(ConfigFactory.parseFile(file));
-                } catch (ConfigException | NullPointerException ignored){}
+                } catch (ConfigException | NullPointerException ignored) {
+                }
             }
         }
     }
 
-    private void startEdit(Stage primaryStage){
+    private void startEdit(Stage primaryStage) {
         //Hide selector window
         primaryStage.hide();
 
@@ -129,6 +132,7 @@ public class ConfigManager {
 
     /**
      * Searches in jar for reference.conf and parses it into a single Config object
+     *
      * @param jarFile File containing full path to .jar file
      * @return Config from reference.conf in jar
      */
@@ -137,9 +141,9 @@ public class ConfigManager {
             ArrayList<Config> allConfigs = new ArrayList<>();
             JarFile jar = new JarFile(jarFile.getAbsolutePath());
             Enumeration entries = jar.entries();
-            while(entries.hasMoreElements()){
-                JarEntry entry = (JarEntry)entries.nextElement();
-                if (entry.getName().endsWith(".conf")){
+            while (entries.hasMoreElements()) {
+                JarEntry entry = (JarEntry) entries.nextElement();
+                if (entry.getName().endsWith(".conf")) {
                     URL url = new URL("jar:file:" + jarFile.getAbsolutePath() + "!/" + entry.getName());
                     allConfigs.add(ConfigFactory.parseURL(url));
                 }
@@ -153,10 +157,10 @@ public class ConfigManager {
     /**
      * Merges all configurations on ArrayList configs together,
      * ensuring that application.conf "wins" over reference.conf.
-     *
+     * <p>
      * Creates global variables applicationConfig, applicationFile and fullConfig
      */
-    private void createFinal(ArrayList<Config> configs){
+    private void createFinal(ArrayList<Config> configs) {
 
         //Move application.conf to the end of the list
         configs.sort(new ConfigComparison());
@@ -181,6 +185,7 @@ public class ConfigManager {
     class ConfigComparison implements Comparator<Config> {
         /**
          * Sorts a List so that Configs with origin application.conf move to the end
+         *
          * @param c1 Config with index one lower than c2
          * @param c2 Config with index one higher than c1
          * @return number of moves to go through the index for c1
@@ -189,16 +194,16 @@ public class ConfigManager {
         public int compare(Config c1, Config c2) {
             String file1 = new File(c1.origin().description()).getName();
             String file2 = new File(c2.origin().description()).getName();
-            if(file1.contains("application.conf")) return 1;
-            if(file1.equals(file2)) return 0;
+            if (file1.contains("application.conf")) return 1;
+            if (file1.equals(file2)) return 0;
             return -1;
         }
     }
 
-    private int getApplicationCount(ArrayList<Path> paths){
+    private int getApplicationCount(ArrayList<Path> paths) {
         int applications = 0;
 
-        for (Path path : paths){
+        for (Path path : paths) {
             for (File file : Objects.requireNonNull(new File(path.toString()).listFiles())) {
                 if (file.getName().equals("application.conf")) applications++;
             }
@@ -224,37 +229,25 @@ public class ConfigManager {
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(applicationFilePath, "UTF-8");
-        } catch (FileNotFoundException | UnsupportedEncodingException ignored) {}
+        } catch (FileNotFoundException | UnsupportedEncodingException ignored) {
+        }
 
         //Write content to file and close it
         Objects.requireNonNull(writer).print(newConfRendered);
         Objects.requireNonNull(writer).close();
     }
 
-    private boolean resolveNotFailed(Config config){
-        try{
-            config.resolve();
-            return true;
-        } catch(ConfigException e){
-            String text = e.getMessage();
-            EditorUI.showAlert("Error", null, text, Alert.AlertType.ERROR);
-        }
-        return false;
-    }
-
-
 
     /**
-     *
      * @param fileDescription String to be analyzed
-     * @param keepEdited boolean decides whether edited phrase should be kept in or not
+     * @param keepEdited      boolean decides whether edited phrase should be kept in or not
      * @return filepath without line number and maybe without edited phrase
      */
-    public static String RawFileString(String fileDescription, boolean keepEdited){
+    public static String RawFileString(String fileDescription, boolean keepEdited) {
 
         int startIndex = 0;
 
-        if (!keepEdited){
+        if (!keepEdited) {
             startIndex = fileDescription.indexOf(Value.Edited);
             startIndex = startIndex == -1 ? 0 : startIndex + Value.Edited.length();
         }
@@ -266,13 +259,11 @@ public class ConfigManager {
     }
 
 
-
     /**
-     *
      * @param file represents a File object with file path
      * @return only extension of filename (for example "conf")
      */
-    private static String Extension(File file){
+    private static String Extension(File file) {
 
         String extension = "";
         int i = file.getName().lastIndexOf(".");
