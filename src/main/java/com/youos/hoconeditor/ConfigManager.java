@@ -166,7 +166,7 @@ public class ConfigManager {
         configs.sort(new ConfigComparison());
 
         //Copy applicationConfig and applicationFile into variables
-        applicationConfig = configs.get(configs.size() - 1);
+        applicationConfig = configs.get(configs.size() - 1).resolve();
         applicationFilePath = applicationConfig.origin().url().getFile();
 
 
@@ -179,7 +179,7 @@ public class ConfigManager {
             build = index + 1 < configs.size() ? configs.get(index + 1).withFallback(build) : build;
         }
 
-        fullConfig = build;
+        fullConfig = build.resolve();
     }
 
     class ConfigComparison implements Comparator<Config> {
@@ -220,7 +220,7 @@ public class ConfigManager {
 
         //Get a valid config string
         ConfigRenderOptions options = ConfigRenderOptions.defaults().setOriginComments(false).setFormatted(true).setComments(true).setJson(false);
-        String newConfRendered = getApplicationConfig().root().render(options);
+        String newConfRendered = applicationConfig.root().render(options);
 
         //Remove useless line breaks
         newConfRendered = newConfRendered.replace("\n\n", "\n");

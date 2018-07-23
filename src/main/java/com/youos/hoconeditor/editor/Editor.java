@@ -19,7 +19,7 @@ class Editor {
 
     private String editFile;
     private String editPath;
-    private String editComment;
+    private List<String> editComments;
     private String editType;
     private String editValue;
     private String editEnvironment;
@@ -37,10 +37,6 @@ class Editor {
         return editPath;
     }
 
-    String getComment() {
-        return editComment;
-    }
-
     String getType() {
         return editType;
     }
@@ -50,6 +46,15 @@ class Editor {
     }
 
     String getEnvironment(){return editEnvironment; }
+
+    String getComment() {
+        StringBuilder sb = new StringBuilder();
+        for (String comment : editComments){
+            sb.append(comment);
+            sb.append("\n");
+        }
+        return sb.toString().substring(0, sb.length() - 1);
+    }
 
     Editor(){}
 
@@ -64,40 +69,38 @@ class Editor {
             path.insert(0, editItem.getValue() + dot);
         }
 
-
         editPath = path.toString();
-        Config resolved = config.resolve();
-        ConfigValue value = resolved.getValue(editPath);
+        ConfigValue value = config.getValue(editPath);
         editFile = ConfigManager.RawFileString(value.origin().description(), true);
-
+        editComments = value.origin().comments();
 
         if (item.isLeaf()){
-            List<String> comments = value.origin().comments();
             editValue = value.render(renderOptions);
             editType = value.valueType().name();
-            editComment = comments.size() > 0 ? comments.get(0) : "";
-            editEnvironment = "";
+            editEnvironment = value.origin().substitutionPath();
             editDisable = false;
         } else {
             editValue = "";
-            editComment = "";
             editType = "PATH";
             editEnvironment = "";
             editDisable = true;
         }
     }
 
-    void editEntryInConfig(String value, String comment, ConfigManager manager){
+    void editEntryInConfig(ConfigManager manager){
 
+        String env = editEnvironment;
+        String comment = getComment();
+        String value = editValue;
         String commentString = comment.isEmpty() ? "" : "#" + comment + "\n";
-        String configString =  commentString + editPath + "=" + value;
+        String configString =  commentString + editPath + "=" + (!env.isEmpty() ? "${" + env + "}" : value);
+
 
         //Determine if fileField needs "(edited)" phrase
         String edited = Value.Edited;
         String oldValue = manager.getFullConfig().getValue(editPath).render(renderOptions);
         List<String> oldComments = manager.getFullConfig().getValue(editPath).origin().comments();
-        String oldComment = oldComments.size() > 0 ? oldComments.get(0) : "";
-        if (oldValue.equals(value) && oldComment.equals(comment) || editFile.contains(edited)) edited = "";
+        if (oldValue.equals(value) && oldComments.equals(editComments) || editFile.contains(edited)) edited = "";
 
         //Parsing String to new Config and merge it with both main Configs while this Config will "win"
         ConfigParseOptions parseOptions = ConfigParseOptions.defaults().setOriginDescription(edited + editFile);

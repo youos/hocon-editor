@@ -77,6 +77,10 @@ public class EditorUI {
         deleteBtn.setDisable(true);
         renameBtn.setDisable(true);
 
+        Button openBtn = new Button(Value.OpenBtn);
+        Button saveBtn = new Button(Value.SaveBtn);
+        Button newKeyBtn = new Button(Value.NewKeyBtn);
+
         Label fileLabel = new Label(Value.FileLabel);
         Label pathLabel = new Label(Value.PathLabel);
         Label typeLabel = new Label(Value.TypeLabel);
@@ -123,13 +127,10 @@ public class EditorUI {
 
         //Action events for toolbar and edit buttons
         editBtn.setOnAction(event -> editEntry());
-        Button openBtn = new Button(Value.OpenBtn);
         openBtn.setOnAction(event -> selectNewFolders());
-        Button saveBtn = new Button(Value.SaveBtn);
         saveBtn.setOnAction(event -> configManager.saveDataToFile());
         deleteBtn.setOnAction(event -> requestDelete());
         renameBtn.setOnAction(event -> requestRename());
-        Button newKeyBtn = new Button(Value.NewKeyBtn);
         newKeyBtn.setOnAction(event -> requestNewKey());
 
         /*Basic view:
@@ -194,7 +195,7 @@ public class EditorUI {
     private void editEntry() {
 
         //Rebuild Backend
-        editor.editEntryInConfig(valueField.getText(), commentField.getText(), configManager);
+        editor.editEntryInConfig(configManager);
 
         //Rebuild Frontend
         changeEditingEntry(editor.getItem(), configManager.getFullConfig());

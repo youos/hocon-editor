@@ -39,7 +39,6 @@ class Tree {
 
             try{
                 if (config.root().get(key).valueType().name().equals("OBJECT")) {
-                    System.out.println(config.root().get(key).origin().substitutionPath());
                     build(config.getObject(key).toConfig(), leaf);
                 }
             } catch (ConfigException ignored){}

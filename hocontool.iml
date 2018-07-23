@@ -11,10 +11,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module-library" exported="">
+    <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../lightbend-config/config/target/config-1.3.3-c6d1ed44097c578707b2a5079d71923fcc36e9d5-SNAPSHOT.jar!/" />
+          <root url="jar://$MODULE_DIR$/../lightbend-config/config/target/config-1.3.3-02e20c28edeaf38bce182df0edad8dade966633c-SNAPSHOT.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
