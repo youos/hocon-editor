@@ -21,7 +21,7 @@ the **unique(!) application.conf** overwrites all other existing sources.
 Unique, because the editor only works as long as your selected sources contain only **one** application.conf
 
 Once you have finished with selecting your folders, you can start to view and edit a merged configuration.
-You can click through the TreeView on the left panel and get information to every tree item you click on
+You can click through the TreeView on the left panel and get information about every tree item you click on
 on the right panel.
 
 #### This information contains:
@@ -44,7 +44,7 @@ Once you have done your changes, click on the "Save" button below.
 This will not yet edit the real files, but it's necessary before that step, 
 because it changes the big merged configuration in the program.
 
-Now if you click on "Apply Changes" in the toolbar on top, All changes you made
+Now if you click on "Apply Changes" in the toolbar on the top, All changes you made
 will be written into the unique **application.conf**. Other configurations will not be changed!
 
 
