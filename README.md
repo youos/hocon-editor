@@ -14,7 +14,7 @@ read if there are any configurations in there.
 
 If you import your configurations, it merges every single one together, ensuring that 
 the **unique(!) application.conf** overwrites all existing sources.
-Unique, because the editor only works as long your selected sources contain only **one** application.conf
+Unique, because the editor only works as long as your selected sources contain only **one** application.conf
 
 Once you have finished with selecting your folders, you can start to view and edit a merged configuration.
 You can click through the TreeView on the left panel and get information to every tree item you click on
@@ -23,11 +23,11 @@ on the right panel.
 #### This information contains:
 
 - **Origin file path** 
-- **Configuration key path** (e.g. config.myValue.abc)
+- **Configuration key path**
 - **Value Type**
-- **Comments** above this key
+- **Comments**
 - **Value**
-- **Environment Variable** (if present)
+- **Environment Variable**
 
 
 
