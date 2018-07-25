@@ -8,6 +8,7 @@ import com.youos.hoconeditor.ConfigManager;
 import com.youos.hoconeditor.Value;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -160,16 +161,16 @@ public class EditorUI {
     void changeEditingEntry(TreeItem<String> item, Config config) {
 
         //Editor setup to determine properties of TreeItem
-        editor.setup(item, config);
+        editor.readProperties(item, config);
 
         //Reading out properties
         String file = editor.getFile();
         String path = editor.getPath();
-        String comment = editor.getComment();
+        String comment = Editor.parseComments(editor.getComments(), false);
         String type = editor.getType();
         String value = editor.getValue();
         String environment = editor.getEnvironment();
-        Boolean btnDisabled = editor.getBtnDisabled();
+        boolean editBtnDisabled = editor.getBtnDisabled();
 
         //Set them into view
         fileField.setText(file);
@@ -179,7 +180,7 @@ public class EditorUI {
         valueField.setText(value);
         environmentField.setText(environment);
 
-        editBtn.setDisable(btnDisabled);
+        editBtn.setDisable(editBtnDisabled);
         deleteBtn.setDisable(false);
         renameBtn.setDisable(false);
     }
@@ -195,7 +196,10 @@ public class EditorUI {
     private void editEntry() {
 
         //Rebuild Backend
-        editor.editEntryInConfig(configManager);
+        ObservableList<CharSequence> commentsRaw = commentField.getParagraphs();
+        String valueRaw = valueField.getText();
+        String envVarRaw = environmentField.getText();
+        editor.editEntryInConfig(configManager, commentsRaw, valueRaw, envVarRaw);
 
         //Rebuild Frontend
         changeEditingEntry(editor.getItem(), configManager.getFullConfig());
@@ -285,10 +289,7 @@ public class EditorUI {
         okButton.setDisable(true);
 
         // Do some validation (using the Java 8 lambda syntax).
-        key.textProperty().addListener((observable, oldValue, newValue) -> {
-            okButton.setDisable(newValue.trim().isEmpty());
-        });
-
+        key.textProperty().addListener((observable, oldValue, newValue) -> okButton.setDisable(newValue.trim().isEmpty()));
         dialog.getDialogPane().setContent(grid);
 
         //Focus key field

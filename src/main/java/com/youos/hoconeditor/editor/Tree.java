@@ -36,7 +36,6 @@ class Tree {
             TreeItem<String> leaf = new TreeItem<>(key);
             root.getChildren().add(leaf);
 
-
             try{
                 if (config.root().get(key).valueType().name().equals("OBJECT")) {
                     build(config.getObject(key).toConfig(), leaf);

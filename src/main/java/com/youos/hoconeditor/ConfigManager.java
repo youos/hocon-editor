@@ -167,7 +167,7 @@ public class ConfigManager {
 
         //Copy applicationConfig and applicationFile into variables
         applicationConfig = configs.get(configs.size() - 1).resolve();
-        applicationFilePath = applicationConfig.origin().url().getFile();
+        applicationFilePath = applicationConfig.origin().url().getFile().replace("%20", " ");
 
 
         //Start merging all configs (needs starting point)
@@ -228,7 +228,7 @@ public class ConfigManager {
         //Prepare writer
         PrintWriter writer = null;
         try {
-            writer = new PrintWriter(applicationFilePath, "UTF-8");
+            writer = new PrintWriter(applicationFilePath.substring(1), "UTF-8");
         } catch (FileNotFoundException | UnsupportedEncodingException ignored) {
         }
 

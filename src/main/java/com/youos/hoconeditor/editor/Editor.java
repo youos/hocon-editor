@@ -3,9 +3,11 @@ package com.youos.hoconeditor.editor;
 import com.typesafe.config.*;
 import com.youos.hoconeditor.ConfigManager;
 import com.youos.hoconeditor.Value;
+import javafx.collections.ObservableList;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 
-import java.util.List;
+import java.util.*;
 
 class Editor {
 
@@ -23,10 +25,10 @@ class Editor {
     private String editType;
     private String editValue;
     private String editEnvironment;
-    private Boolean editDisable;
+    private Boolean editDisabled;
 
-    Boolean getBtnDisabled() {
-        return editDisable;
+    boolean getBtnDisabled() {
+        return editDisabled;
     }
 
     String getFile() {
@@ -47,18 +49,13 @@ class Editor {
 
     String getEnvironment(){return editEnvironment; }
 
-    String getComment() {
-        StringBuilder sb = new StringBuilder();
-        for (String comment : editComments){
-            sb.append(comment);
-            sb.append("\n");
-        }
-        return sb.toString().substring(0, sb.length() - 1);
+    List<String> getComments(){
+        return editComments;
     }
 
     Editor(){}
 
-    void setup(TreeItem<String> item, Config config){
+    void readProperties(TreeItem<String> item, Config config){
         if (item == null) return;
         this.item = item;
 
@@ -69,60 +66,83 @@ class Editor {
             path.insert(0, editItem.getValue() + dot);
         }
 
+        boolean fromEnv = false;
         editPath = path.toString();
         ConfigValue value = config.getValue(editPath);
-        editFile = ConfigManager.RawFileString(value.origin().description(), true);
-        editComments = value.origin().comments();
+        ConfigOrigin origin = value.origin();
+        editComments = origin.comments();
+        editFile = origin.description();
+        if (editFile.equals("env variables")) {
+            fromEnv = true;
+        }
 
         if (item.isLeaf()){
             editValue = value.render(renderOptions);
             editType = value.valueType().name();
-            editEnvironment = value.origin().substitutionPath();
-            editDisable = false;
+            editEnvironment = fromEnv ? origin.substitutionPath() : "";
+            editDisabled = false;
         } else {
             editValue = "";
             editType = "PATH";
             editEnvironment = "";
-            editDisable = true;
+            editDisabled = true;
         }
     }
 
-    void editEntryInConfig(ConfigManager manager){
+    void editEntryInConfig(ConfigManager manager, ObservableList<CharSequence> commentRaw, String valueRaw, String envVarRaw){
 
-        String env = editEnvironment;
-        String comment = getComment();
-        String value = editValue;
-        String commentString = comment.isEmpty() ? "" : "#" + comment + "\n";
-        String configString =  commentString + editPath + "=" + (!env.isEmpty() ? "${" + env + "}" : value);
-
-
-        //Determine if fileField needs "(edited)" phrase
-        String edited = Value.Edited;
-        String oldValue = manager.getFullConfig().getValue(editPath).render(renderOptions);
-        List<String> oldComments = manager.getFullConfig().getValue(editPath).origin().comments();
-        if (oldValue.equals(value) && oldComments.equals(editComments) || editFile.contains(edited)) edited = "";
+        String comment = parseComments(commentRaw, true);
+        String value;
+        String configString;
+        if (envVarRaw == null || envVarRaw.isEmpty()){
+            value = valueRaw;
+        } else {
+            value = "${" + envVarRaw + "}";
+        }
+        configString = comment + editPath + "=" + (value.isEmpty() ? "default value" : value);
 
         //Parsing String to new Config and merge it with both main Configs while this Config will "win"
-        ConfigParseOptions parseOptions = ConfigParseOptions.defaults().setOriginDescription(edited + editFile);
-        Config addConf = ConfigFactory.parseString(configString, parseOptions);
-        Config newFullConf = addConf.withFallback(manager.getFullConfig());
-        Config newApplicationConf = addConf.withFallback(manager.getApplicationConfig());
+        Config addConf = ConfigFactory.parseString(configString);
+        try{
+            Config newFullConf = addConf.withFallback(manager.getFullConfig()).resolve();
+            Config newApplicationConf = addConf.withFallback(manager.getApplicationConfig()).resolve();
+
+            //Apply changes to main configs
+            manager.setFullConfig(newFullConf);
+            manager.setApplicationConfig(newApplicationConf);
+        } catch (ConfigException.UnresolvedSubstitution e){
+            //TODO Error Message Environment variable is missing
+        }
+    }
+
+    void deleteSelectedEntry(ConfigManager manager){
+
+        //Remove selected path from main configs
+        Config newFullConf = manager.getFullConfig().withoutPath(editPath);
+        Config newApplicationConf = manager.getApplicationConfig().withoutPath(editPath);
 
         //Apply changes to main configs
         manager.setFullConfig(newFullConf);
         manager.setApplicationConfig(newApplicationConf);
     }
 
-    void deleteSelectedEntry(ConfigManager manager){
-        String path = getPath();
+    static String parseComments(List<String> comments, boolean withSyntax) {
+        StringBuilder sb = new StringBuilder();
+        for (String comment : comments){
+            if (withSyntax) sb.append("#");
+            sb.append(comment);
+            sb.append("\n");
+        }
+        if (sb.length() < 2) return "";
+        return sb.toString();
+    }
 
-        //Remove selected path from main configs
-        Config newFullConf = manager.getFullConfig().withoutPath(path);
-        Config newApplicationConf = manager.getApplicationConfig().withoutPath(path);
-
-        //Apply changes to main configs
-        manager.setFullConfig(newFullConf);
-        manager.setApplicationConfig(newApplicationConf);
+    static String parseComments(ObservableList<CharSequence> comments, boolean withSyntax){
+        List<String> newComments = new ArrayList<String>(comments.size());
+        for (CharSequence cs : comments){
+            newComments.add(cs.toString());
+        }
+        return parseComments(newComments, withSyntax);
     }
 
 }
