@@ -1,5 +1,10 @@
 package com.youos.hoconeditor;
 
+/**
+ *  This class is a collection of every frontend Label,
+ *  created for having better maintenance of texts shown
+ */
+
 public class Value {
 
     //Static Frontend Text Labels
@@ -30,14 +35,8 @@ public class Value {
             NoDirectoryError = "Please select a directory!",
             DeleteConfirmation = "Are you sure you want to remove this entry?",
             EnterKeyTitle = "Enter Key Path",
-            EnterKeyHeader = "Please enter a key path!\re.g. config.test.myKey",
-            EnterKeyContent = "Path:",
             EnterTypeTitle = "Enter Type",
-            EnterTypeHeader = "Please choose a type!",
-            EnterTypeContent = "Type:",
             EnterValueTitle = "Enter Value",
-            EnterValueHeader = "Please enter a value!\re.g. 47.2",
-            EnterValueContent = "Value:",
             RenameKeyTitle = "Refactor",
             RenameKeyHeader = "Type in the new name of the key!",
             RenameKeyContent = "New name:",

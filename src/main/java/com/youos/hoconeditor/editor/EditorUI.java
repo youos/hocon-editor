@@ -27,14 +27,12 @@ import java.util.Optional;
 
 /**
  * Class EditorUI:
- * <p>
+ *
  * This class manages the whole user interface containing -->
  * TreeView to the left
  * Editor grid to the right
  * Toolbar on the top
- * <p>
  * and the setup method for alerts
- * <p>
  * Events triggered in this interface lead to Editor.java in most cases
  */
 
@@ -158,6 +156,12 @@ public class EditorUI {
         mainStage.show();
     }
 
+    /**
+     * Triggered if user clicks on a tree item.
+     * Displays all information of a key value pair
+     * @param item Tree item which has been clicked
+     * @param config config to look at for information
+     */
     void changeEditingEntry(TreeItem<String> item, Config config) {
 
         //Editor setup to determine properties of TreeItem
@@ -185,6 +189,9 @@ public class EditorUI {
         renameBtn.setDisable(false);
     }
 
+    /**
+     * Closes current editor UI and starts selector UI
+     */
     private void selectNewFolders() {
 
         //Close window and open selectorStage to select new directories
@@ -193,6 +200,9 @@ public class EditorUI {
 
     }
 
+    /**
+     * Edits selected entry based on user input
+     */
     private void editEntry() {
 
         //Rebuild Backend
@@ -205,6 +215,10 @@ public class EditorUI {
         changeEditingEntry(editor.getItem(), configManager.getFullConfig());
     }
 
+    /**
+     * Triggered when user hits delete button in toolbar.
+     * Sets a confirmation window for the user
+     */
     private void requestDelete() {
 
         //Confirm before continue removing the element
@@ -219,6 +233,10 @@ public class EditorUI {
         }
     }
 
+    /**
+     * Triggered when user hits rename button in toolbar
+     * Sets a confirmation window for the user where he also types in the new name
+     */
     private void requestRename() {
         TextInputDialog dialog = new TextInputDialog();
         setTexts(dialog, Value.RenameKeyTitle, Value.RenameKeyHeader, Value.RenameKeyContent);
@@ -244,7 +262,16 @@ public class EditorUI {
         editor.getItem().setValue(newName);
     }
 
+    /**
+     * Triggered when user hits new key button in toolbar
+     * Sets a confirmation window for the user where he needs to
+     * type in the new key name, value type and the value itself
+     */
     private void requestNewKey() {
+
+        //0 -> Key
+        //1 -> Type
+        //2 -> Value
 
         Dialog dialog = createNewKeyDialog();
         Optional result = dialog.showAndWait();
@@ -253,13 +280,12 @@ public class EditorUI {
                     String[] array = (String[]) arrayObj;
                     createNewKey(array[0], array[1], array[2]);
                 });
-
-        //0 -> Key
-        //1 -> Type
-        //2 -> Value
-
     }
 
+    /**
+     * Method for actually setting the new key dialog.
+     * @return the dialog with the optional result
+     */
     private Dialog createNewKeyDialog() {
         Dialog<String[]> dialog = new Dialog<>();
         setTexts(dialog, "Add key", "Select a key path, a value and a value type!", "");
@@ -305,8 +331,14 @@ public class EditorUI {
         return dialog;
     }
 
+    /**
+     * Creates the new key value pair in frontend and backend
+     * @param key String user input key
+     * @param type String user input type
+     * @param value String user input value
+     */
     private void createNewKey(String key, String type, String value) {
-        Object finalValue = null;
+        java.io.Serializable finalValue = null;
         try {
             switch (type) {
                 case "STRING":
@@ -330,20 +362,37 @@ public class EditorUI {
         Config newFullConf = configManager.getFullConfig().withValue(key, configValue);
         Config newApplicationConf = configManager.getApplicationConfig().withValue(key, configValue);
 
-        //Apply changes to main configs
+        //Apply changes to main configs (backend)
         configManager.setFullConfig(newFullConf);
         configManager.setApplicationConfig(newApplicationConf);
 
+        //Apply changes to frontend
         tree.rebuild(newFullConf);
     }
 
+    /**
+     * Shorthand for all dialog methods.
+     * Sets the text values for title, header and content
+     * @param dialog dialog pane for being changed
+     * @param title String for title
+     * @param header String for header
+     * @param content String for content
+     */
     private static void setTexts(Dialog dialog, String title, String header, String content) {
         dialog.setTitle(title);
         dialog.setHeaderText(header);
         dialog.setContentText(content);
     }
 
-
+    /**
+     * Displays a standard alert. This can be an error, confirmation or a warning
+     * @param title String for title
+     * @param header String for header
+     * @param content String for content
+     * @param type AlertType setting the type of the alert
+     * @return true if user pressed ok or continue
+     *         false if user denied or closed the dialog
+     */
     public static boolean showAlert(String title, String header, String content, Alert.AlertType type) {
 
         //Show alert for warnings, problems, errors (specified by type)

@@ -29,8 +29,13 @@ import java.util.Locale;
 public class SelectorUI extends Application {
 
     public static void main(String[] args){
-        Locale.setDefault(Locale.ENGLISH);
-        launch();
+        try{
+            Locale.setDefault(Locale.ENGLISH);
+            launch();
+        } catch (Exception e){
+            System.out.println("Unknown error");
+        }
+
     }
 
     /**
@@ -111,6 +116,10 @@ public class SelectorUI extends Application {
         return fields;
     }
 
+    /**
+     * @param primaryStage Stage for frontend
+     * @param innerGrid GridPane containing textFields
+     */
     private void requestStartEditing(final Stage primaryStage, GridPane innerGrid){
 
         ArrayList<Path> paths = new ArrayList<>();
@@ -121,6 +130,11 @@ public class SelectorUI extends Application {
         }
     }
 
+    /**
+     * @param paths ArrayList filled with paths to check
+     * @return true if there is no path that doesn't exist
+     *         false otherwise
+     */
     private boolean areValid(ArrayList<Path> paths){
         for (Path path : paths){
             boolean noDir = path.toString().equals(Value.NoDirectoryLabel);
@@ -139,12 +153,20 @@ public class SelectorUI extends Application {
         return true;
     }
 
+    /**
+     * @param list ArrayList in which duplicates are removed
+     */
     private void removeDuplicates(ArrayList<Path> list){
         LinkedHashSet<Path> setItems = new LinkedHashSet<>(list);
         list.clear();
         list.addAll(setItems);
     }
 
+    /**
+     * Creates and fills main grid pane of the scene
+     * @param primaryStage Stage to build the frontend on
+     * @return grid pane filled with all necessary frontend elements
+     */
     private GridPane initializeGrid(final Stage primaryStage){
 
         GridPane outerGrid = new GridPane(),
@@ -174,6 +196,9 @@ public class SelectorUI extends Application {
         return outerGrid;
     }
 
+    /**
+     * Method filled with style settings for the frontend
+     */
     private void styleSetup(GridPane innerGrid, GridPane outerGrid, GridPane start_addGrid, Text sceneTitle, Button startBtn, Button addBtn) {
         outerGrid.setAlignment(Pos.CENTER);
         outerGrid.setHgap(10);

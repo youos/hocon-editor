@@ -2,9 +2,7 @@ package com.youos.hoconeditor.editor;
 
 import com.typesafe.config.*;
 import com.youos.hoconeditor.ConfigManager;
-import com.youos.hoconeditor.Value;
 import javafx.collections.ObservableList;
-import javafx.scene.control.TextField;
 import javafx.scene.control.TreeItem;
 
 import java.util.*;
@@ -71,7 +69,7 @@ class Editor {
         ConfigValue value = config.getValue(editPath);
         ConfigOrigin origin = value.origin();
         editComments = origin.comments();
-        editFile = origin.description();
+        editFile = ConfigManager.RawFileString(origin.description());
         if (editFile.equals("env variables")) {
             fromEnv = true;
         }

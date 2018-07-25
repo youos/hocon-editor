@@ -60,6 +60,12 @@ public class ConfigManager {
         }
     }
 
+    /**
+     * Ensures that application count equals 1
+     * @param paths ArrayList to look for file names
+     * @return true if count is 1
+     *         false otherwise
+     */
     private boolean checkApplicationCount(ArrayList<Path> paths) {
 
         int applications = getApplicationCount(paths);
@@ -95,7 +101,14 @@ public class ConfigManager {
         configs.removeAll(Collections.singleton(null));
     }
 
+    /**
+     * Recursive method to get all files in a directory
+     * @param file Directory to search in
+     * @param configs ArrayList to add any found configuration
+     */
     private void readFile(File file, ArrayList<Config> configs) {
+
+        //Folder ->
         if (file.isDirectory()) {
             File[] folder = Objects.requireNonNull(file.listFiles());
             for (File f : folder) {
@@ -103,6 +116,7 @@ public class ConfigManager {
             }
         }
 
+        //File ->
         if (file.isFile()) {
             //Get file extension
             String extension = Extension(file);
@@ -116,12 +130,15 @@ public class ConfigManager {
             if (extension.equals("conf")) {
                 try {
                     configs.add(ConfigFactory.parseFile(file));
-                } catch (ConfigException | NullPointerException ignored) {
-                }
+                } catch (ConfigException | NullPointerException ignored) {}
             }
         }
     }
 
+    /**
+     *
+     * @param primaryStage Stage to hide and build editor UI
+     */
     private void startEdit(Stage primaryStage) {
         //Hide selector window
         primaryStage.hide();
@@ -200,6 +217,11 @@ public class ConfigManager {
         }
     }
 
+    /**
+     * Calculates application.conf count in paths
+     * @param paths ArrayList to look in
+     * @return number of application.conf files
+     */
     private int getApplicationCount(ArrayList<Path> paths) {
         int applications = 0;
 
@@ -240,20 +262,14 @@ public class ConfigManager {
 
     /**
      * @param fileDescription String to be analyzed
-     * @param keepEdited      boolean decides whether edited phrase should be kept in or not
-     * @return filepath without line number and maybe without edited phrase
+     * @return filepath without line number
      */
-    public static String RawFileString(String fileDescription, boolean keepEdited) {
+    public static String RawFileString(String fileDescription) {
 
         int startIndex = 0;
 
-        if (!keepEdited) {
-            startIndex = fileDescription.indexOf(Value.Edited);
-            startIndex = startIndex == -1 ? 0 : startIndex + Value.Edited.length();
-        }
-
         int endIndex = fileDescription.lastIndexOf(":");
-        if (endIndex == -1) return "";
+        if (endIndex == -1) endIndex = fileDescription.length() - 1;
         return fileDescription.substring(startIndex, endIndex);
 
     }
