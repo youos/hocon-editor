@@ -60,7 +60,31 @@ There is a published executable jar file in the project root.
 
 ## Gallery
 
-![alt text](doc/adding_comments.PNG)
+Start / Selecting your sources:
+
+![](doc/select_folders.PNG)
+
+Main GUI:
+
+![](doc/main_usage.PNG)
+
+Adding multiline comments:
+
+![](doc/adding_comments.PNG)
+
+Renaming a key:
+
+![](doc/renaming_key.PNG)
+
+Deleting a key:
+
+![](doc/deleting_key.PNG)
+
+Adding a key:
+
+![](doc/adding_key.PNG)
+
+
 
 
 
