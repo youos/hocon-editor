@@ -58,6 +58,10 @@ will be written into the unique **application.conf**. Other configurations will 
 
 There is a published executable jar file in the project root.
 
+## Gallery
+
+![alt text](doc/adding_comments.PNG)
+
 
 
 
