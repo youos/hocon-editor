@@ -1,9 +1,6 @@
 package com.youos.hoconeditor;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
-import com.typesafe.config.ConfigFactory;
-import com.typesafe.config.ConfigRenderOptions;
+import com.typesafe.config.*;
 import com.youos.hoconeditor.editor.EditorUI;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
@@ -183,7 +180,7 @@ public class ConfigManager {
         configs.sort(new ConfigComparison());
 
         //Copy applicationConfig and applicationFile into variables
-        applicationConfig = configs.get(configs.size() - 1).resolve();
+        applicationConfig = configs.get(configs.size() - 1);
         applicationFilePath = applicationConfig.origin().url().getFile().replace("%20", " ");
 
 
@@ -196,7 +193,12 @@ public class ConfigManager {
             build = index + 1 < configs.size() ? configs.get(index + 1).withFallback(build) : build;
         }
 
-        fullConfig = build.resolve();
+        try{
+            fullConfig = build.resolve();
+        } catch(ConfigException.UnresolvedSubstitution e){
+            fullConfig = build.resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true));
+        }
+
     }
 
     class ConfigComparison implements Comparator<Config> {
@@ -244,15 +246,23 @@ public class ConfigManager {
         ConfigRenderOptions options = ConfigRenderOptions.defaults().setOriginComments(false).setFormatted(true).setComments(true).setJson(false);
         String newConfRendered = applicationConfig.root().render(options);
 
+        Set<Map.Entry<String, ConfigValue>> set = applicationConfig.entrySet();
+        /*for (Map.Entry<String, ConfigValue> entry : set){
+            ConfigValue value = entry.getValue();
+            String subPath = value.origin().substitutionPath();
+            if (subPath == null) continue;
+            value = ConfigValueFactory.fromAnyRef(value.origin().substitutionPath());
+            //entry.setValue(value);
+        }*/
+
         //Remove useless line breaks
         newConfRendered = newConfRendered.replace("\n\n", "\n");
 
         //Prepare writer
         PrintWriter writer = null;
         try {
-            writer = new PrintWriter(applicationFilePath.substring(1), "UTF-8");
-        } catch (FileNotFoundException | UnsupportedEncodingException ignored) {
-        }
+            writer = new PrintWriter(applicationFilePath, "UTF-8");
+        } catch (FileNotFoundException | UnsupportedEncodingException ignored) { }
 
         //Write content to file and close it
         Objects.requireNonNull(writer).print(newConfRendered);

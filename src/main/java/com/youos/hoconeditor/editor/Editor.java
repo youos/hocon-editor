@@ -66,7 +66,7 @@ class Editor {
 
         boolean fromEnv = false;
         editPath = path.toString();
-        ConfigValue value = config.getValue(editPath);
+        ConfigValue value = config.resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true)).getValue(editPath);
         ConfigOrigin origin = value.origin();
         editComments = origin.comments();
         editFile = ConfigManager.RawFileString(origin.description());
